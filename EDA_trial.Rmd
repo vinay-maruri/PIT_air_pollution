@@ -1,0 +1,171 @@
+---
+title: "EDA_trial"
+author: "The BOYZ"
+date: "2024-04-05"
+output: pdf_document
+---
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+
+```{r}
+ppd_lawrenceville <- pittsburgh_pollution_data %>%
+  filter(site == "Lawrenceville" & is_valid == "TRUE")
+```
+
+
+```{r}
+ppd_lawrenceville_SO2 <- ppd_lawrenceville %>%
+  filter(parameter == "SO2") %>%
+  mutate(hour = as.numeric(format(datetime_est, "%H")))
+
+ggplot(ppd_lawrenceville_SO2, aes(x = datetime_est, y = report_value)) +
+  geom_point(color = "red", size = 1) +   # Points
+  labs(x = "Hour of the Day", y = "Report Value", title = "Time Series Plot of Report Value") +
+  theme_minimal()
+
+
+```
+
+```{r}
+ppd_lawrenceville_SO2_2019 <- ppd_lawrenceville_SO2 %>%
+  filter(year(datetime_est) == 2019)
+
+# Convert datetime_est to Date format (removing the time component)
+ppd_lawrenceville_SO2_2019 <- ppd_lawrenceville_SO2_2019 %>%
+  mutate(date = as.Date(datetime_est))
+
+# Calculate the mean report_value for each day
+daily_means <- ppd_lawrenceville_SO2_2019 %>%
+  group_by(date) %>%
+  summarise(mean_report_value = mean(report_value))
+
+# Calculate the median report_value for each day
+daily_medians <- ppd_lawrenceville_SO2_2019 %>%
+  group_by(date) %>%
+  summarise(median_report_value = median(report_value))
+
+# Plot the mean report_value over each day in 2019
+ggplot(daily_means, aes(x = date, y = mean_report_value)) +
+  geom_line(color = "blue") +    # Line plot
+  geom_point(color = "red", size = 2) +   # Points
+  labs(x = "Date", y = "Mean Report Value", title = "Mean Report Value Over Time in 2019") +
+  theme_minimal() +    # Minimal theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Plot the median report_value over each day in 2019
+ggplot(daily_medians, aes(x = date, y = median_report_value)) +
+  geom_line(color = "blue") +    # Line plot
+  geom_point(color = "red", size = 2) +   # Points
+  labs(x = "Date", y = "Mean Report Value", title = "Median Report Value Over Time in 2019") +
+  theme_minimal() +    # Minimal theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+# Calculate the abs. val mean report_value for each day
+abs_daily_means <- ppd_lawrenceville_SO2_2019 %>%
+  group_by(date) %>%
+  summarise(abs_mean_report_value = mean(abs(report_value)))
+
+# Plot the mean report_value over each day in 2019
+ggplot(abs_daily_means, aes(x = date, y = abs_mean_report_value)) +
+  geom_line(color = "blue") +    # Line plot
+  geom_point(color = "red", size = 2) +   # Points
+  labs(x = "Date", y = "Mean Report Value", title = "Mean Report Value Over Time in 2019") +
+  theme_minimal() +    # Minimal theme
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r}
+ppd_lawrenceville_vars <- ppd_lawrenceville %>%
+  filter(parameter %in% c("NO", "SO2", "CO", "PM10B", "PM25B")) %>%
+  mutate(hour = as.numeric(format(datetime_est, "%H")))
+
+head(ppd_lawrenceville_vars)
+
+ggplot(ppd_lawrenceville_vars %>% filter(parameter == "NO"), aes(x = datetime_est, y = report_value)) +
+  geom_line(color = "red", size = 1) +   # Points
+  labs(x = "Hour of the Day", y = "Report Value", title = "Time Series Plot of Report Value") +
+  theme_minimal()
+
+ggplot(ppd_lawrenceville_vars %>% filter(parameter == "SO2"), aes(x = datetime_est, y = report_value)) +
+  geom_line(color = "red", size = 1) +   # Points
+  labs(x = "Hour of the Day", y = "Report Value", title = "Time Series Plot of Report Value") +
+  theme_minimal()
+
+ggplot(ppd_lawrenceville_vars %>% filter(parameter == "CO"), aes(x = datetime_est, y = report_value)) +
+  geom_line(color = "red", size = 1) +   # Points
+  labs(x = "Hour of the Day", y = "Report Value", title = "Time Series Plot of Report Value") +
+  theme_minimal()
+
+ggplot(ppd_lawrenceville_vars %>% filter(parameter == "PM10B"), aes(x = datetime_est, y = report_value)) +
+  geom_line(color = "red", size = 1) +   # Points
+  labs(x = "Hour of the Day", y = "Report Value", title = "Time Series Plot of Report Value") +
+  theme_minimal()
+
+ggplot(ppd_lawrenceville_vars %>% filter(parameter == "PM25B"), aes(x = datetime_est, y = report_value)) +
+  geom_line(color = "red", size = 1) +   # Points
+  labs(x = "Hour of the Day", y = "Report Value", title = "Time Series Plot of Report Value") +
+  theme_minimal()
+
+```
+
+```{r}
+ppd_lawrenceville_PM10B <- ppd_lawrenceville_vars %>% 
+  filter(parameter == "PM10B") %>%
+  mutate(hour = as.numeric(format(datetime_est, "%H")))
+ppd_lawrenceville_PM10B$datetime_est <- as.POSIXct(ppd_lawrenceville_PM10B$datetime_est)
+
+# Create a sequence of datetime values starting from "2016-01-01 00:00:00" and incrementing by one hour
+datetime_seq <- seq(from = as.POSIXct("2016-01-01 00:00:00"), 
+                    by = "1 hour", 
+                    length.out = nrow(ppd_lawrenceville_PM10B))
+
+# Create a time series object using the report_value column and the datetime sequence
+PM10B_ts <- ts(ppd_lawrenceville_PM10B$report_value, start = c(2016, 1), frequency = 365.25*24)
+
+plot(PM10B_ts)
+```
+
+```{r}
+library(forecast)
+library(ggplot2)
+
+# 1. Residuals vs Fitted Values Plot
+fit <- auto.arima(PM10B_ts, max.p = 10, max.q = 10, max.order = 10, seasonal = T)  # Fit an ARIMA model
+residuals <- resid(fit)  # Extract residuals
+fitted_values <- fitted(fit)  # Extract fitted values
+
+# Plot residuals vs fitted values
+ggplot(data.frame(residuals = residuals, fitted = fitted_values), aes(x = fitted, y = residuals)) +
+  geom_point(color = "blue") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(x = "Fitted Values", y = "Residuals", title = "Residuals vs Fitted Values Plot")
+
+# 2. Forecasting
+forecast_result <- forecast(fit, h = 24)  # Forecasting the next 24 periods
+
+# Plot the forecast
+autoplot(forecast_result) +
+  labs(title = "Forecast of PM10B Time Series")
+
+# 3. Model Selection
+# Fit different time series models and compare their AIC values
+model_arima <- auto.arima(PM10B_ts)
+model_ets <- ets(PM10B_ts)
+model_stlm <- stlm(PM10B_ts)
+
+# Compare AIC values
+aic_values <- AIC(model_arima, model_ets, model_stlm)
+
+```
+
+```{r}
+
+```
+
+
