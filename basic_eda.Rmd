@@ -1,0 +1,93 @@
+---
+title: "basic_EDA"
+author: "Vinay Maruri"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(forecast)
+library(astsa)
+library(vars)
+library(marima)
+library(fGarch)
+```
+
+```{r}
+data <- read_csv("Data/cleaned_pollution_data.csv")
+```
+
+#start building a basic time series SO2 model
+
+```{r}
+so2_data <- data %>% filter(parameter == "SO2")
+so2_data <- so2_data[, c("datetime_est", "site", "report_value")]
+```
+
+```{r, eval = F}
+so2_data <- so2_data %>% filter(parameter == "SO2")
+```
+
+
+```{r}
+#plotting the time series data
+ggplot(so2_data, aes(x = datetime_est, y = report_value)) + geom_line()
+```
+
+```{r}
+#plot acf and pacf
+acf(so2_data$report_value, lag.max = 50)
+pacf(so2_data$report_value, lag.max = 50)
+```
+We can clearly reject the white noise hypothesis as the acf and pacf plots show significant autocorrelations at various lags. 
+
+```{r}
+#decompose the time series data
+liberty_so2_data_ts <- ts(filter(so2_data, site == "Liberty")$report_value, frequency = 24*365)
+so2_data_decomp <- decompose(liberty_so2_data_ts)
+```
+
+```{r}
+#plot the decomposed time series data
+plot(so2_data_decomp)
+```
+
+so it appears that we have seasonality, a trend, and randomness in the data. 
+
+```{r, eval = F}
+#fit an ARIMA model
+so2_data_arima <- auto.arima(liberty_so2_data_ts, max.p = 5, max.q = 5, max.order = 10, stationary = F, seasonal = T, allowdrift = T, trace = T, stepwise = F, approximation = F)
+
+```
+
+#arima(0, 1, 0) model is the best fit for the data? this didn't finish running on our data. 
+
+
+#add external regressors to the arima model (wind speed/direction, temperature)
+```{r}
+liberty_only <- liberty_only[, c("datetime_est", "parameter", "report_value")]
+#reshape data to wide format
+liberty_only <- liberty_only %>% pivot_wider(names_from = c(parameter), values_from = report_value)
+liberty_only <- liberty_only[, c("datetime_est", "SO2", "SONICWS", "SONICWD", "OUT_T", "INT_T")]
+```
+
+```{r}
+#make a arima with external regressors
+liberty_xt <- arima(liberty_only$SO2, order = c(0, 1, 0), xreg = liberty_only[, c("SONICWS", "SONICWD", "OUT_T", "INT_T")])
+```
+
+```{r}
+#view the arima results
+summary(liberty_xt)
+```
+
+
+
+
+

@@ -10,6 +10,10 @@ library(ggplot2)
 library(dplyr)
 ```
 
+```{r}
+pittsburgh_pollution_data <- read_csv("Data/cleaned_pollution_data.csv")
+```
+
 
 ```{r}
 ppd_lawrenceville <- pittsburgh_pollution_data %>%
