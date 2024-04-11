@@ -173,8 +173,89 @@ so2_data_arima <- auto.arima(liberty_so2_data_ts, max.p = 5, max.q = 5, max.orde
 
 ```
 
-#arima(0, 1, 0) model is the best fit for the data? this didn't finish running on our data. 
+#arima(0, 1, 0) model is the best fit for the data? this didn't finish running on our data.
 
+# Lawrenceville VARMA model
+```{r}
+# Matrix of pollutant variables + time (trend)
+so2_data_2019 <- so2_data %>%
+  filter(year(datetime_est) == 2019)
+co_data_2019 <- co_data %>%
+  filter(year(datetime_est) == 2019)
+ozone_data_2019 <- ozone_data %>%
+  filter(year(datetime_est) == 2019)
+no_data_2019 <- no_data %>%
+  filter(year(datetime_est) == 2019)
+pm10b_data_2019 <- pm10b_data %>%
+  filter(year(datetime_est) == 2019)
+pm25b_data_2019 <- pm25b_data %>%
+  filter(year(datetime_est) == 2019)
+
+
+so2_rv_law  <- filter(so2_data_2019, site == "Lawrenceville")$report_value
+co_rv_law  <- filter(co_data_2019, site == "Lawrenceville")$report_value
+ozone_rv_law  <- filter(ozone_data_2019, site == "Lawrenceville")$report_value
+no_rv_law  <- filter(no_data_2019, site == "Lawrenceville")$report_value
+#no2_rv_law  <- filter(no2_data, site == "Lawrenceville")$report_value
+pm10b_rv_law  <- filter(pm10b_data_2019, site == "Lawrenceville")$report_value
+pm25b_rv_law  <- filter(pm25b_data_2019, site == "Lawrenceville")$report_value
+#pm25t_rv_law  <- filter(pm25t_data, site == "Lawrenceville")$report_value
+
+
+pollut_cols_law <- as.data.frame(cbind(so2_rv_law, co_rv_law, 
+                                       ozone_rv_law, no_rv_law, 
+                                       pm10b_rv_law, pm25b_rv_law))
+
+lawrenceville_pollutant_df <- pollut_cols_law %>%
+  mutate(trend = time(so2_rv_law))
+
+# Fit linear regression
+trend_so2_law <- lm(so2_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_co_law <- lm(co_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_ozone_law <- lm(ozone_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_no_law <- lm(no_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_pm10b_law <- lm(pm10b_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_pm25b_law <- lm(pm25b_rv_law ~ trend, data = lawrenceville_pollutant_df)
+
+# Remove Linear Trend
+detrend_so2_law <- resid(trend_so2_law)
+detrend_co_law <- resid(trend_co_law)
+detrend_ozone_law <- resid(trend_ozone_law)
+detrend_no_law <- resid(trend_no_law)
+detrend_pm10b_law <- resid(trend_pm10b_law)
+detrend_pm25b_law <- resid(trend_pm25b_law)
+
+dt_so2_law_ts <- ts(detrend_so2_law, start = c(2016, 1), frequency = 24)
+dt_co_law_ts <- ts(detrend_co_law, start = c(2016, 1), frequency = 24)
+dt_ozone_law_ts <- ts(detrend_ozone_law, start = c(2016, 1), frequency = 24)
+dt_no_law_ts <- ts(detrend_no_law, start = c(2016, 1), frequency = 24)
+dt_pm10b_law_ts <- ts(detrend_pm10b_law, start = c(2016, 1), frequency = 24)
+dt_pm25b_law_ts <- ts(detrend_pm25b_law, start = c(2016, 1), frequency = 24)
+
+# Plot Detrended Time Series
+par(mfrow=c(2,3))
+plot(dt_so2_law_ts, type="l", main="Detrended SO2", ylab="SO2 RV")
+plot(dt_co_law_ts, type="l", main="Detrended CO", ylab="CO RV")
+plot(dt_ozone_law_ts, type="l", main="Detrended Ozone", ylab="Ozone RV")
+plot(dt_no_law_ts, type="l", main="Detrended NO", ylab="NO RV")
+plot(dt_pm10b_law_ts, type="l", main="Detrended PM10b", ylab="PM10b RV")
+plot(dt_pm25b_law_ts, type="l", main="Detrended PM25b", ylab="PM25b RV")
+
+# Order Select VAR model
+VAR_matrix_law <- cbind(dt_so2_law_ts, dt_co_law_ts, dt_ozone_law_ts,
+                    dt_no_law_ts, dt_pm10b_law_ts, dt_pm25b_law_ts)
+
+order_select_law <- VARselect(VAR_matrix_law, lag.max = 70 , type="none")
+
+print(order_select_law$selection)
+
+# Fit VAR model
+VAR_model_law <- VAR(VAR_matrix_law, p=order_select_law$selection[3], type="none")
+
+# Summary of the VAR model
+summary(VAR_model_law)
+
+```
 
 #add external regressors to the arima model (wind speed/direction, temperature)
 ```{r}
