@@ -28,6 +28,27 @@ data <- read_csv("Data/cleaned_pollution_data.csv")
 ```{r}
 so2_data <- data %>% filter(parameter == "SO2")
 so2_data <- so2_data[, c("datetime_est", "site", "report_value")]
+
+co_data <- data %>% filter(parameter == "CO")
+co_data <- co_data[, c("datetime_est", "site", "report_value")]
+
+ozone_data <- data %>% filter(parameter == "OZONE")
+ozone_data <- ozone_data[, c("datetime_est", "site", "report_value")]
+
+no_data <- data %>% filter(parameter == "NO")
+no_data <- no_data[, c("datetime_est", "site", "report_value")]
+
+no2_data <- data %>% filter(parameter == "NO2")
+no2_data <- no2_data[, c("datetime_est", "site", "report_value")]
+
+pm10b_data <- data %>% filter(parameter == "PM10B")
+pm10b_data <- pm10b_data[, c("datetime_est", "site", "report_value")]
+
+pm25b_data <- data %>% filter(parameter == "PM25B")
+pm25b_data <- pm25b_data[, c("datetime_est", "site", "report_value")]
+
+pm25t_data <- data %>% filter(parameter == "PM25T")
+pm25t_data <- pm25t_data[, c("datetime_est", "site", "report_value")]
 ```
 
 ```{r, eval = F}
@@ -37,25 +58,111 @@ so2_data <- so2_data %>% filter(parameter == "SO2")
 
 ```{r}
 #plotting the time series data
-ggplot(so2_data, aes(x = datetime_est, y = report_value)) + geom_line()
+ggplot(so2_data, aes(x = datetime_est, y = report_value)) + 
+  geom_line() + 
+  labs(title= "SO2 Reported Value")
+
+ggplot(co_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() + 
+  labs(title= "CO Reported Value")
+
+ggplot(ozone_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() + 
+  labs(title= "Ozone Reported Value")
+
+ggplot(no_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() + 
+  labs(title= "NO Reported Value")
+
+ggplot(no2_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() + 
+  labs(title= "NO2 Reported Value")
+
+ggplot(pm10b_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() + 
+  labs(title= "PM10B Reported Value")
+
+ggplot(pm25b_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() + 
+  labs(title= "PM25B Reported Value")
+
+ggplot(pm25t_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() + 
+  labs(title= "PM25T Reported Value")
 ```
 
 ```{r}
 #plot acf and pacf
 acf(so2_data$report_value, lag.max = 50)
 pacf(so2_data$report_value, lag.max = 50)
+
+#plot acf and pacf
+acf(co_data$report_value, lag.max = 50)
+pacf(co_data$report_value, lag.max = 50)
+
+#plot acf and pacf
+acf(ozone_data$report_value, lag.max = 50)
+pacf(ozone_data$report_value, lag.max = 50)
+
+#plot acf and pacf
+acf(no_data$report_value, lag.max = 50)
+pacf(no_data$report_value, lag.max = 50)
+
+#plot acf and pacf
+acf(no2_data$report_value, lag.max = 50)
+pacf(no2_data$report_value, lag.max = 50)
+
+#plot acf and pacf
+acf(pm10b_data$report_value, lag.max = 50)
+pacf(pm10b_data$report_value, lag.max = 50)
+
+#plot acf and pacf
+acf(pm25b_data$report_value, lag.max = 50)
+pacf(pm25b_data$report_value, lag.max = 50)
+
+#plot acf and pacf
+acf(pm25t_data$report_value, lag.max = 50)
+pacf(pm25t_data$report_value, lag.max = 50)
 ```
 We can clearly reject the white noise hypothesis as the acf and pacf plots show significant autocorrelations at various lags. 
 
 ```{r}
 #decompose the time series data
-liberty_so2_data_ts <- ts(filter(so2_data, site == "Liberty")$report_value, frequency = 24*365)
-so2_data_decomp <- decompose(liberty_so2_data_ts)
+lawrenceville_so2_data_ts <- ts(filter(so2_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+so2_data_decomp <- decompose(lawrenceville_so2_data_ts)
+
+lawrenceville_co_data_ts <- ts(filter(co_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+co_data_decomp <- decompose(lawrenceville_co_data_ts)
+
+lawrenceville_ozone_data_ts <- ts(filter(ozone_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+ozone_data_decomp <- decompose(lawrenceville_ozone_data_ts)
+
+lawrenceville_no_data_ts <- ts(filter(no_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+no_data_decomp <- decompose(lawrenceville_no_data_ts)
+
+lawrenceville_no2_data_ts <- ts(filter(no2_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+# no2_data_decomp <- decompose(lawrenceville_no2_data_ts)
+
+lawrenceville_pm10b_data_ts <- ts(filter(pm10b_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+pm10b_data_decomp <- decompose(lawrenceville_pm10b_data_ts)
+
+lawrenceville_pm25b_data_ts <- ts(filter(pm25b_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+pm25b_data_decomp <- decompose(lawrenceville_pm25b_data_ts)
+
+lawrenceville_pm25t_data_ts <- ts(filter(pm25t_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+# pm25t_data_decomp <- decompose(lawrenceville_pm25t_data_ts)
 ```
 
 ```{r}
 #plot the decomposed time series data
 plot(so2_data_decomp)
+plot(co_data_decomp)
+plot(ozone_data_decomp)
+plot(no_data_decomp)
+#plot(no2_data_decomp)
+plot(pm10b_data_decomp)
+plot(pm25b_data_decomp)
+# plot(pm25t_data_decomp)
 ```
 
 so it appears that we have seasonality, a trend, and randomness in the data. 
@@ -66,8 +173,89 @@ so2_data_arima <- auto.arima(liberty_so2_data_ts, max.p = 5, max.q = 5, max.orde
 
 ```
 
-#arima(0, 1, 0) model is the best fit for the data? this didn't finish running on our data. 
+#arima(0, 1, 0) model is the best fit for the data? this didn't finish running on our data.
 
+# Lawrenceville VARMA model
+```{r}
+# Matrix of pollutant variables + time (trend)
+so2_data_2019 <- so2_data %>%
+  filter(year(datetime_est) == 2019)
+co_data_2019 <- co_data %>%
+  filter(year(datetime_est) == 2019)
+ozone_data_2019 <- ozone_data %>%
+  filter(year(datetime_est) == 2019)
+no_data_2019 <- no_data %>%
+  filter(year(datetime_est) == 2019)
+pm10b_data_2019 <- pm10b_data %>%
+  filter(year(datetime_est) == 2019)
+pm25b_data_2019 <- pm25b_data %>%
+  filter(year(datetime_est) == 2019)
+
+
+so2_rv_law  <- filter(so2_data_2019, site == "Lawrenceville")$report_value
+co_rv_law  <- filter(co_data_2019, site == "Lawrenceville")$report_value
+ozone_rv_law  <- filter(ozone_data_2019, site == "Lawrenceville")$report_value
+no_rv_law  <- filter(no_data_2019, site == "Lawrenceville")$report_value
+#no2_rv_law  <- filter(no2_data, site == "Lawrenceville")$report_value
+pm10b_rv_law  <- filter(pm10b_data_2019, site == "Lawrenceville")$report_value
+pm25b_rv_law  <- filter(pm25b_data_2019, site == "Lawrenceville")$report_value
+#pm25t_rv_law  <- filter(pm25t_data, site == "Lawrenceville")$report_value
+
+
+pollut_cols_law <- as.data.frame(cbind(so2_rv_law, co_rv_law, 
+                                       ozone_rv_law, no_rv_law, 
+                                       pm10b_rv_law, pm25b_rv_law))
+
+lawrenceville_pollutant_df <- pollut_cols_law %>%
+  mutate(trend = time(so2_rv_law))
+
+# Fit linear regression
+trend_so2_law <- lm(so2_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_co_law <- lm(co_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_ozone_law <- lm(ozone_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_no_law <- lm(no_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_pm10b_law <- lm(pm10b_rv_law ~ trend, data = lawrenceville_pollutant_df)
+trend_pm25b_law <- lm(pm25b_rv_law ~ trend, data = lawrenceville_pollutant_df)
+
+# Remove Linear Trend
+detrend_so2_law <- resid(trend_so2_law)
+detrend_co_law <- resid(trend_co_law)
+detrend_ozone_law <- resid(trend_ozone_law)
+detrend_no_law <- resid(trend_no_law)
+detrend_pm10b_law <- resid(trend_pm10b_law)
+detrend_pm25b_law <- resid(trend_pm25b_law)
+
+dt_so2_law_ts <- ts(detrend_so2_law, start = c(2016, 1), frequency = 24)
+dt_co_law_ts <- ts(detrend_co_law, start = c(2016, 1), frequency = 24)
+dt_ozone_law_ts <- ts(detrend_ozone_law, start = c(2016, 1), frequency = 24)
+dt_no_law_ts <- ts(detrend_no_law, start = c(2016, 1), frequency = 24)
+dt_pm10b_law_ts <- ts(detrend_pm10b_law, start = c(2016, 1), frequency = 24)
+dt_pm25b_law_ts <- ts(detrend_pm25b_law, start = c(2016, 1), frequency = 24)
+
+# Plot Detrended Time Series
+par(mfrow=c(2,3))
+plot(dt_so2_law_ts, type="l", main="Detrended SO2", ylab="SO2 RV")
+plot(dt_co_law_ts, type="l", main="Detrended CO", ylab="CO RV")
+plot(dt_ozone_law_ts, type="l", main="Detrended Ozone", ylab="Ozone RV")
+plot(dt_no_law_ts, type="l", main="Detrended NO", ylab="NO RV")
+plot(dt_pm10b_law_ts, type="l", main="Detrended PM10b", ylab="PM10b RV")
+plot(dt_pm25b_law_ts, type="l", main="Detrended PM25b", ylab="PM25b RV")
+
+# Order Select VAR model
+VAR_matrix_law <- cbind(dt_so2_law_ts, dt_co_law_ts, dt_ozone_law_ts,
+                    dt_no_law_ts, dt_pm10b_law_ts, dt_pm25b_law_ts)
+
+order_select_law <- VARselect(VAR_matrix_law, lag.max = 70 , type="none")
+
+print(order_select_law$selection)
+
+# Fit VAR model
+VAR_model_law <- VAR(VAR_matrix_law, p=order_select_law$selection[3], type="none")
+
+# Summary of the VAR model
+summary(VAR_model_law)
+
+```
 
 #add external regressors to the arima model (wind speed/direction, temperature)
 ```{r}
