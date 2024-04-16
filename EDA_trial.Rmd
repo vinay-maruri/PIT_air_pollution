@@ -86,7 +86,7 @@ ggplot(abs_daily_means, aes(x = date, y = abs_mean_report_value)) +
 
 ```{r}
 ppd_lawrenceville_vars <- ppd_lawrenceville %>%
-  filter(parameter %in% c("NO", "SO2", "CO", "PM10B", "PM25B")) %>%
+  filter(parameter %in% c("NO", "SO2", "CO", "PM10B", "PM25B", "INT_T", "OUT_T", "SONICWS", "SONICWD", "OUT_RH", "BP", "Peak Wind Gust", "RAINFALL")) %>%
   mutate(hour = as.numeric(format(datetime_est, "%H")))
 
 head(ppd_lawrenceville_vars)
@@ -138,37 +138,44 @@ plot(PM10B_ts)
 ```{r}
 library(forecast)
 library(ggplot2)
-
-# 1. Residuals vs Fitted Values Plot
-fit <- auto.arima(PM10B_ts, max.p = 10, max.q = 10, max.order = 10, seasonal = T)  # Fit an ARIMA model
-residuals <- resid(fit)  # Extract residuals
-fitted_values <- fitted(fit)  # Extract fitted values
-
-# Plot residuals vs fitted values
-ggplot(data.frame(residuals = residuals, fitted = fitted_values), aes(x = fitted, y = residuals)) +
-  geom_point(color = "blue") +
-  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
-  labs(x = "Fitted Values", y = "Residuals", title = "Residuals vs Fitted Values Plot")
-
-# 2. Forecasting
-forecast_result <- forecast(fit, h = 24)  # Forecasting the next 24 periods
-
-# Plot the forecast
-autoplot(forecast_result) +
-  labs(title = "Forecast of PM10B Time Series")
-
-# 3. Model Selection
-# Fit different time series models and compare their AIC values
-model_arima <- auto.arima(PM10B_ts)
-model_ets <- ets(PM10B_ts)
-model_stlm <- stlm(PM10B_ts)
-
-# Compare AIC values
-aic_values <- AIC(model_arima, model_ets, model_stlm)
-
+library(vars)
 ```
 
 ```{r}
+#long to wide, only for the variables of interest (parameter and report value)--no need for anything else
+ppd_lawrenceville_vars_wide <- ppd_lawrenceville_vars %>%
+  spread(parameter, report_value)
+
+#remove unnecessary columns
+ppd_lawrenceville_vars_wide <- subset(ppd_lawrenceville_vars_wide, select = -c(is_valid, unit, unit_description, highest_flag, aqs_parameter_category, hour, site))
+
+
+#collapse the data into a single row for each datetime_est
+ppd_lawrenceville_vars_wide <- ppd_lawrenceville_vars_wide %>%
+  group_by(datetime_est) %>%
+  summarise_all(mean, na.rm = TRUE)
+
+#fill na with zero
+ppd_lawrenceville_vars_wide[is.na(ppd_lawrenceville_vars_wide)] <- 0
+```
+
+```{r}
+#split the data into pollutants and environmental variables
+pollutants <- ppd_lawrenceville_vars_wide[, c("NO", "SO2", "CO", "PM10B", "PM25B")]
+environmentalvariables <- ppd_lawrenceville_vars_wide[, c("BP", "INT_T", "OUT_RH", "OUT_T", 
+                                                          "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS")]
+```
+
+```{r}
+#this line of code takes a day to run.
+model_select <- VARselect(y=pollutants, lag.max = 70, season = 9*24*30, type = "trend", exogen = environmentalvariables)
+```
+
+```{r}
+# Fit the VAR model (lag choices are 29, 45, 70)
+var_1 <- VAR(pollutants, p = 29, type = "trend", season = 9*24*30, exogen = environmentalvariables)
+var_2 <- VAR(pollutants, p = 45, type = "trend", season = 9*24*30, exogen = environmentalvariables)
+var_3 <- VAR(pollutants, p = 70, type = "trend", season = 9*24*30, exogen = environmentalvariables)
 
 ```
 
