@@ -162,14 +162,36 @@ ppd_lawrenceville_vars_wide[is.na(ppd_lawrenceville_vars_wide)] <- 0
 ```{r}
 #split the data into pollutants and environmental variables
 pollutants <- ppd_lawrenceville_vars_wide[, c("NO", "SO2", "CO", "PM10B", "PM25B")]
-environmentalvariables <- ppd_lawrenceville_vars_wide[, c("BP", "INT_T", "OUT_RH", "OUT_T", 
+environmentalvariables <- ppd_lawrenceville_vars_wide[, c("datetime_est", "BP", "INT_T", "OUT_RH", "OUT_T", 
                                                           "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS")]
 ```
+
+
+```{r}
+#add the inversion data to the environmental variables
+inversion_data <- read.csv("inversionseries.csv")
+
+#keep only unique observations, so must de-dupe the data
+inversion_data <- inversion_data[, c("time", "inversion")]
+inversion_data <- inversion_data[!duplicated(inversion_data), ]
+
+#expand the series to include all dates, set NA to False
+inversion_data$time <- as.POSIXct(inversion_data$time)
+inversion_data <- padr::pad(inversion_data, interval = "hour")
+#replace the NA values with the value of the previous non-NA value
+inversion_data$inversion <- zoo::na.locf(inversion_data$inversion)
+
+#merge the inversion data with the environmental variables
+environmentalvariables <- merge(environmentalvariables, inversion_data, by.x = "datetime_est", by.y = "time", all.x = TRUE)
+
+```
+
 
 ```{r}
 #this line of code takes a day to run.
 model_select <- VARselect(y=pollutants, lag.max = 70, season = 9*24*30, type = "trend", exogen = environmentalvariables)
 ```
+
 
 ```{r}
 # Fit the VAR model (lag choices are 29, 45, 70)
