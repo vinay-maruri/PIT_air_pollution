@@ -183,7 +183,8 @@ inversion_data$inversion <- zoo::na.locf(inversion_data$inversion)
 
 #merge the inversion data with the environmental variables
 environmentalvariables <- merge(environmentalvariables, inversion_data, by.x = "datetime_est", by.y = "time", all.x = TRUE)
-
+#drop the datetime_est and time columns, we won't need them
+environmentalvariables <- environmentalvariables[, 2:10]
 ```
 
 
