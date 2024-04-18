@@ -214,6 +214,10 @@ rm(PM10B_ts, datetime_seq)
 rm(train)
 ```
 
+```{r}
+#for some reason BP is zero for half of the data, so replace with trend values
+environmentalvariables$BP[environmentalvariables$BP == 0] <- mean(environmentalvariables$BP, na.rm = TRUE)
+```
 
 
 ```{r}
@@ -226,42 +230,67 @@ pollutants <- na.locf(pollutants, fromLast = T)
 ```
 
 ```{r}
-#get the row numbers of the missing values
-#missing_values1 <- which(is.na(pollutants), arr.ind = TRUE)
-#missing_values2 <- which(is.na(environmentalvariables), arr.ind = TRUE)
-#drop the missing values from environmentalvariables and pollutants
-#environmentalvariables <- environmentalvariables[-missing_values1[,1], ]
-#pollutants <- pollutants[-missing_values2[,1], ]
+#detrend the data
+library(astsa)
+for(i in 1:ncol(pollutants)){
+  pollutants[,i] <- detrend(pollutants[,i], lowess = TRUE)
+}
 ```
 
 
 ```{r}
 #this line of code takes a day to run.
-#model_select <- VARselect(y=pollutants, lag.max = 50, type = "trend", exogen = environmentalvariables)
+#model_select <- VARselect(y=pollutants, lag.max = 100, exogen = environmentalvariables)
+```
+
+#now the correct model is 99 lags.
+
+
+```{r}
+# Fit the VAR model (lag choices are 27, 99)
+var_1 <- VAR(pollutants, p = 27, exogen = environmentalvariables)
+#var_3 <- VAR(pollutants, p = 99, exogen = environmentalvariables)
+
+```
+
+
+
+
+
+
+
+```{r}
+#let's make a forecast with var_1 
+#we have to forecast out the external regressors
+library(prophet)
+
+fut_ev <- matrix(0, nrow = 2400, ncol = ncol(environmentalvariables)+1)
+fut_ev[, 1] <- 1
+for(i in 2:9){
+  tmp <- as.data.frame(environmentalvariables[, i])
+  tmp$ds <- seq(1, nrow(tmp), by = 1)
+  #create an hourly sequence for the length of the data
+  colnames(tmp) <- c("y", "ds")
+  p <- prophet(tmp, weekly.seasonality = T)
+  future <- make_future_dataframe(p, periods = 2400, freq = "hour")
+  forecast <- predict(p, future)
+  plot(p, forecast)
+  fut_ev[, i] <- forecast$yhat[72083:74482]
+}
+#resample the inversion data
+fut_ev[, 10] <- sample(environmentalvariables$inversion, 2400, replace = TRUE)
+
+fut_ev <- as.data.frame(fut_ev)
+
+colnames(fut_ev) <- c("const", colnames(environmentalvariables))
+```
+
+```{r}
+fut_ev <- fut_ev[, 2:10]
 ```
 
 
 ```{r}
-# Fit the VAR model (lag choices are 29, 45, 70)
-var_1 <- VAR(pollutants, p = 29, exogen = environmentalvariables)
-var_2 <- VAR(pollutants, p = 45, exogen = environmentalvariables)
-var_3 <- VAR(pollutants, p = 70, exogen = environmentalvariables)
-
+forecast_1 <- forecast(var_1, dumvar = fut_ev)
 ```
-
-
-```{r}
-#evaluate the model
-coef(var_1)
-```
-
-```{r}
-coef(var_2)
-```
-
-```{r}
-coef(var_3)
-```
-
-
 
