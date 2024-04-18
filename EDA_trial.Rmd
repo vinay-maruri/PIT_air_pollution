@@ -222,19 +222,19 @@ environmentalvariables$BP[environmentalvariables$BP == 0] <- mean(environmentalv
 
 ```{r}
 #seasonal differencing
-for(i in 1:ncol(pollutants)){
-  pollutants[,i] <- pollutants[, i] - lag(pollutants[, i], 24*365)
-}
+#for(i in 1:ncol(pollutants)){
+#  pollutants[,i] <- pollutants[, i] - lag(pollutants[, i], 24*365)
+#}
 #fill to front with the first non-na value
-pollutants <- na.locf(pollutants, fromLast = T)
+#pollutants <- na.locf(pollutants, fromLast = T)
 ```
 
 ```{r}
 #detrend the data
-library(astsa)
-for(i in 1:ncol(pollutants)){
-  pollutants[,i] <- detrend(pollutants[,i], lowess = TRUE)
-}
+#library(astsa)
+#for(i in 1:ncol(pollutants)){
+#  pollutants[,i] <- detrend(pollutants[,i], lowess = TRUE)
+#}
 ```
 
 
@@ -248,13 +248,14 @@ for(i in 1:ncol(pollutants)){
 
 ```{r}
 # Fit the VAR model (lag choices are 27, 99)
-var_1 <- VAR(pollutants, p = 27, exogen = environmentalvariables)
+var_1 <- VAR(pollutants, p = 27, type = "trend", exogen = environmentalvariables)
 #var_3 <- VAR(pollutants, p = 99, exogen = environmentalvariables)
 
 ```
 
-
-
+```{r}
+coef(var_1)
+```
 
 
 
@@ -264,25 +265,25 @@ var_1 <- VAR(pollutants, p = 27, exogen = environmentalvariables)
 #we have to forecast out the external regressors
 library(prophet)
 
-fut_ev <- matrix(0, nrow = 2400, ncol = ncol(environmentalvariables)+1)
-fut_ev[, 1] <- 1
-for(i in 2:9){
+fut_ev <- matrix(0, nrow = 2400, ncol = ncol(environmentalvariables))
+#fut_ev[, 1] <- 1
+for(i in 1:8){
   tmp <- as.data.frame(environmentalvariables[, i])
   tmp$ds <- seq(1, nrow(tmp), by = 1)
   #create an hourly sequence for the length of the data
   colnames(tmp) <- c("y", "ds")
-  p <- prophet(tmp, weekly.seasonality = T)
+  p <- prophet(tmp)
   future <- make_future_dataframe(p, periods = 2400, freq = "hour")
   forecast <- predict(p, future)
   plot(p, forecast)
   fut_ev[, i] <- forecast$yhat[72083:74482]
 }
 #resample the inversion data
-fut_ev[, 10] <- sample(environmentalvariables$inversion, 2400, replace = TRUE)
+fut_ev[, 9] <- sample(environmentalvariables$inversion, 2400, replace = TRUE)
 
 fut_ev <- as.data.frame(fut_ev)
 
-colnames(fut_ev) <- c("const", colnames(environmentalvariables))
+colnames(fut_ev) <- colnames(environmentalvariables)
 ```
 
 ```{r}
@@ -292,5 +293,11 @@ fut_ev <- fut_ev[, 2:10]
 
 ```{r}
 forecast_1 <- forecast(var_1, dumvar = fut_ev)
+```
+
+```{r}
+var_ne <- VAR(pollutants, p = 27)
+forecast_ne <- predict(var_ne, n.ahead = 2400)
+plot(forecast_ne)
 ```
 
