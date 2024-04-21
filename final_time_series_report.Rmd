@@ -12,3 +12,20 @@ library(forecast)
 library(vars)
 ```
 
+
+# Executive Summary
+
+This study investigates the effect of atmospheric inversions on air quality in Pittsburgh, specifically focusing on how said meteorological events impact pollutant levels. Utilizing years of data from both the Allegheny County Health Department and the NOAA High Resolution Rapid Refresh model, we conducted a detailed analysis on pollutants such as SO2, CO, Ozone, NO, PM10, and PM2.5 as well as other weather variables in the Lawrenceville area. To evaluate how inversions affect these pollutants, we developed a VARX model and defined inversions as when cold air is trapped below warmer air thus affecting local wind patterns. Our findings reveal that inversions significantly increase NO and CO levels and significantly decrease Ozone and PM10, while having no significant effect on SO2 and PM2.5. In summation, this study emphasizes the complex relationships between weather phenomena and urban pollution allowing us to offer insights on environmental health recommendations and future air quality management.
+
+# Introduction
+
+Since the 1800s, the city of Pittsburgh’s air quality has been heavily influenced by the consistent presence of heavy manufacturing plants in the area. While air quality is no longer in the abysmal state it once was in the early-mid 1900s, when the steel industry was thriving in Western Pennsylvania, Pittsburgh still has some of the worst air quality in the nation according to the American Lung Association1. This is in part due to emissions from heavily polluting steel mills (operated by U.S. Steel) and petrochemical factories (operated by Shell) operating to the south and east of the city. An additional factor that contributes to air pollution in Pittsburgh is the phenomena of atmospheric inversion. Pittsburgh’s geography, which contains numerous mountains, plateaus, and river valleys can easily trap industrial pollutants when an inversion occurs because of the low cloud and fog layers that form, causing smog to be breathed in by Pittsburgh’s residents. Furthermore, because inversions generally also cause wind directions to change, the normal flow of pollutants away from the Pittsburgh area to the south is re-routed to flow over the Pittsburgh area, adding to the air quality problems. 
+
+Our project aims to study air pollution in Pittsburgh by specifically understanding the effect of inversion on air pollution. We will calculate when inversion happens in the Pittsburgh area, and using 8 years of hourly pollution and weather data measurements, we will estimate the effect of inversion on the levels of CO, NO, S02, Ozone, PM10B, and PM25B in Pittsburgh using a VARX model. We will then conclude by presenting forecasts of air pollution into the future using this model. 
+
+# Data 
+
+Our data came from two sources. The first data set is from the Allegheny County Health Department and contains hourly sensor data from various sensors across the greater Pittsburgh area. Each row in the data set pertains to a measurement of a specific air pollutant or weather parameter. Each of these measurements have a reported time and date along with the sensor location in which the measurements were taken. The data initially spans from January of 2016 to early April of 2024. Before data cleaning, there were 8,389,797 rows of data with some locations having more consistent measurements in regards to time than others.
+
+The second data set is from file outputs for the National Oceanic and Atmospheric Administration’s (NOAA) High Resolution Rapid Fresh (HRRF) atmospheric model. To match the previous data set, we are only considering measurements from January of 2016 to early April of 2024. The data include temperature measurements in Kelvin at different altitudes. The location in which the data were collected is given in longitude and latitude coordinates so we can best align this data with our selected location.
+
