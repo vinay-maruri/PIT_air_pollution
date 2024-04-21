@@ -1,0 +1,14 @@
+---
+title: "The Effect of Inversion on Pittsburgh Air Pollution"
+author: "Jamie Kim, Daven Lagu, Vinay Maruri, Zachary Strennen"
+date: "April 21st, 2024"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(forecast)
+library(vars)
+```
+
