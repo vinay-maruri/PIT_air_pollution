@@ -40,7 +40,8 @@ Because we will be considering weather as external regressors in our model the d
 
 After our data cleaning process, we ended up with 72,074 observations from the air pollution dataset for our analysis. 
 
-```{r, eval = F}
+
+```{r, echo = F, include=F}
 library(tidyverse)
 library(ggplot2)
 library(dplyr)
@@ -73,6 +74,7 @@ library(vtable)
 st(ppd_lawrenceville_wide)
 ```
 
+**Figure 1:**
 
 ```{r, out.width="75%", fig.align = 'center', echo=FALSE}
 knitr::include_graphics("/Users/zachstrennen/Desktop/Screenshot 2024-04-21 at 9.03.10 PM.png")
@@ -90,7 +92,8 @@ From the NOAA data, we compared the surface temperature with the 2-m temperature
 
 ### Exploratory Data Analysis
 
-To measure Pittsburgh air quality in the Lawrenceville area, we examined the pollutant parameters $SO_2$, CO, Ozone, NO, $PM_{10}$, and $PM_{2.5}$ from January 2016 to April 2024, filtering by the criteria mentioned in the Data Cleaning section. The time series, time series decomposition, and ACF/PACF plots were generated for all 6 pollutants to look for factors like seasonality or trend that could potentially be important when fitting a model to the data. The plots for all pollutants are shown below:
+To measure Pittsburgh air quality in the Lawrenceville area, we examined the pollutant parameters $SO_2$, CO, Ozone, NO, $PM_{10}$, and $PM_{2.5}$ from January 2016 to April 2024, filtering by the criteria mentioned in the Data Cleaning section. The time series, time series decomposition, and ACF/PACF plots were generated for all 6 pollutants to look for factors like seasonality or trend that could potentially be important when fitting a model to the data. The plots for all pollutants are shown in Figure 2:
+
 ```{r, echo=FALSE, include=FALSE}
 data <- read_csv("Data/cleaned_pollution_data.csv")
 pittsburgh_pollution_data <- read_csv("Data/cleaned_pollution_data.csv")
@@ -150,36 +153,40 @@ lawrenceville_pm25t_data_ts <- ts(filter(pm25t_data, site == "Lawrenceville")$re
 
 
 
-SO2:
+**Figure 2:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(so2_data, aes(x = datetime_est, y = report_value)) +
   geom_line() +
-  labs(title = "$SO_2$ Time Series Plot", x = "Time", y = "Reported $SO_2$ value (PPM)") +
+  labs(title = "SO2 Time Series Plot", x = "Time", y = "Reported SO2 value (PPM)") +
   theme_bw()
 ```
 
-From this plot, we see a clear repeating deterministic pattern over all the years, in increments of approximately one year, where levels of the pollutant increase to a peak from the start of the year and slowly decrease again towards the end of the year, for all years in our 2016 to 2024 range, which suggests a seasonal component to our data set. This seasonal pattern becomes even more apparent when we use the decompose() function to plot the decomposition of the time series for all of our pollutants, as we did with $SO_2$ below:
- 
+From this plot, we see a clear repeating deterministic pattern over all the years, in increments of approximately one year, where levels of the pollutant increase to a peak from the start of the year and slowly decrease again towards the end of the year, for all years in our 2016 to 2024 range, which suggests a seasonal component to our data set. This seasonal pattern becomes even more apparent when we use the decompose() function to plot the decomposition of the time series for all of our pollutants, as we did with $SO_2$ in Figure 3:
+
+**Figure 3:**
+
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(so2_data_decomp)
 ```
 
-Here, we see a seasonal pattern in our pollutant data for $SO_2$ exists, as well as a trend component that rises and falls over the 2016-2024 range of time we use to examine $SO_2$. These findings show that when building a model with our pollutant data, we must be able to account for the seasonal and trend component that exists in the data. Finally, we check for autocorrelation in our pollutant data by examining the ACF and PACF plots for $SO_2$, as shown below:
+Here, we see a seasonal pattern in our pollutant data for $SO_2$ exists, as well as a trend component that rises and falls over the 2016-2024 range of time we use to examine $SO_2$. These findings show that when building a model with our pollutant data, we must be able to account for the seasonal and trend component that exists in the data. Finally, we check for autocorrelation in our pollutant data by examining the ACF and PACF plots for $SO_2$, as shown in Figure 4:
+
+**Figure 4:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_so2 <- acf(so2_data$report_value, lag.max = 50, plot = FALSE)
 pacf_so2 <- pacf(so2_data$report_value, lag.max = 50, plot = FALSE)
 par(mfrow = c(1, 2))
-plot(acf_so2, main = "ACF Plot for $SO_2$")
-plot(pacf_so2, main = "PACF Plot for $SO_2$")
+plot(acf_so2, main = "ACF Plot for SO2")
+plot(pacf_so2, main = "PACF Plot for SO2")
 ```
 
 Here, we see that in the ACF plot we find significant spikes for all lags and for many lags in the PACF plot (up to the maximum lag value of 50 that was specified), which gives clear evidence that we can reject the white noise hypothesis as both the ACF and PACF show significant autocorrelations over various lags. The significant autocorrelation that exists for multiple lags in both plots provides more evidence that a strong trend and/or seasonality exists in the data that must be accounted for when building our model. 
 
-While the above plot analysis was done only for the $SO_2$ pollutant, we can see that the same behavior holds true for all pollutants, as shown below: 
+While the Figure 4 analysis was done only for the $SO_2$ pollutant, we can see that the same behavior holds true for all pollutants, as shown in Figure 5: 
 
-CO: 
+**Figure 5:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(co_data, aes(x = datetime_est, y = report_value)) +
@@ -189,14 +196,17 @@ ggplot(co_data, aes(x = datetime_est, y = report_value)) +
 ```
 
 
-The plot of CO levels from 2016 to 2024 portrays a seasonal cycle, with yearly peaks suggesting an increase in carbon monoxide emissions during colder months. These regular fluctuations point towards a strong seasonal among CO levels. Additionally, the consistent yearly pattern indicates the repeatability of the trends suggesting that certain annual factors consistently influence CO emission levels.
+From the time series plot of CO there is a seasonal pattern with yearly peaks, which suggests that there’s an increase in CO emissions during colder months. This fluctuation displays strong seasonality among CO levels. In addition, the consistent pattern shows the repeated trends, which suggests that some annual factors consistently affect CO emissions.
 
+**Figure 6:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(co_data_decomp)
 ```
 
-The decomposition of the time series for CO clarifies the nature of fluctuations. The trend component smooths out short-term variations to highlight long-term movements in CO levels, potentially reflecting the impact of environmental changes over the period. The seasonal component extracted from the time series confirms the cyclical pattern detected from the time series plot, reinforcing the presence of seasonal influences. 
+The decomposition of CO clarifies the nature of fluctuations. From the plot, the trend component smooths out the short-term variations so that long-term changes are visible reflecting the impact of environmental changes. Seasonal components also confirm that the cyclical pattern is detected reinforcing the presence of seasonal influences.
+
+**Figure 7:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_co <- acf(co_data$report_value, lag.max = 50, plot = FALSE)
@@ -206,9 +216,9 @@ plot(acf_co, main = "ACF Plot for CO")
 plot(pacf_co, main = "PACF Plot for CO")
 ```
 
-The ACF and PACF plots of CO provide additional insight to the data. The ACF plot displays a series of spikes at regular intervals, declining over time but remaining significant, confirming the seasonal effect by showing the persistent correlation between past values at seasonal lags. The PACF plot suggests that the data can be modeled by a relatively low-order autoregressive process by showing a significant spike at the first lag followed by a cut-off. This implies that even though the current CO levels are influenced by their immediate past values, the seasonal pattern is the natural part of the series structure.
+The ACF and PACF plot for CO also provide some additional information to focus on. The ACF plot shows some spikes at regular intervals, which decline over time but remain significant. This confirms the seasonal effect by showing the correlation between historical values and different lags. The PACF plot shows that the data can be modeled by low order autoregressive processes.
 
-Ozone: 
+**Figure 8:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(ozone_data, aes(x = datetime_est, y = report_value)) +
@@ -217,13 +227,17 @@ ggplot(ozone_data, aes(x = datetime_est, y = report_value)) +
   theme_bw()
 ```
 
-The time series plot of reported Ozone values indicates variable peaks throughout the period from 2016 to 2024. Unlike CO, the ozone levels do not display a clear, consistent seasonal peak; instead, they show multiple peaks within each year. This could be related to atmospheric conditions such as the inversions in Pittsburgh. Since Ozone is a pollutant formed by the reactions between other factors under sunlight, the data might reflect the complex interplay between industrial emissions and the atmospheric conditions in Pittsburgh.
+The time series plot for Ozone shows some peaks throughout the time period. Even though Ozone does not show the clear seasonal peak as seen with CO, they still show multiple peaks within each year. This might be related to conditions such as atmospheric inversions. The data also might reflect the characteristics of Ozone pollutants.
+
+**Figure 9:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(ozone_data_decomp)
 ```
 
-From the Ozone decomposition plot, we observed a trend component that does not follow a simple linear path, which might indicate the impact of progressive changes in emission regulation and shifting industrial activity over time. The seasonal component exhibits complex patterns with more than one peak in a year, suggesting multiple periods when atmospheric inversions are likely to occur, leading to increased Ozone concentrations. 
+From the Ozone decomposition plot, we were able to find that the trend component does not follow a linear trend, which indicates the impact of changes in regulation in Pittsburgh. The seasonal component shows complex patterns with more than one peak in a year.
+
+**Figure 10:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_ozone <- acf(ozone_data$report_value, lag.max = 50, plot = FALSE)
@@ -237,7 +251,7 @@ plot(pacf_ozone, main = "PACF Plot for Ozone")
 Finally, the ACF and PACF plots for the ozone data, there is evidence of an autoregressive process based on the initial spike in the PACF plot (there is evidence of short-term persistence) and the gradual decline shown in the ACF plot with periodic spikes. 
 
 
-NO: 
+**Figure 11:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(no_data, aes(x = datetime_est, y = report_value)) +
@@ -249,11 +263,15 @@ ggplot(no_data, aes(x = datetime_est, y = report_value)) +
 The time series plot of NO levels show a series of spikes across the time span of the series. Unlike CO, these spikes appear in more erratic patterns and appear to be influenced by factors other than seasonal cycles or other regular patterns. This may be a sign that inversion is a factor that explains CO emissions given that inversions are irregular events. 
 
 
+**Figure 12:** 
+
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(no_data_decomp)
 ```
 
 The decomposition of the NO time series reveals the individual components more clearly. The trend component shows a gradual fluctuation over time without a clear upward or downward trend, indicating that overall NO levels have not consistently increased or decreased over time. The seasonal component does not demonstrate the same clear-cut cyclical pattern, suggesting that NO levels may be influenced by more irregular seasonal factors.
+
+**Figure 13:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_no <- acf(no_data$report_value, lag.max = 50, plot = FALSE)
@@ -265,7 +283,7 @@ plot(pacf_no, main = "PACF Plot for NO")
 
 The ACF and PACF plots for NO show unusual correlation structure. The ACF plot shows a slow decay while the PACF plot shows a significant spike at the first lag and decay afterwards. There does not appear to be strong autoregressive pattern present. 
 
-$PM_{10}$: 
+**Figure 14:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(pm10b_data, aes(x = datetime_est, y = report_value)) +
@@ -278,11 +296,15 @@ The next pollutant we reviewed is $PM_{10}$ where we notice that there are large
 
 
 
+**Figure 15:** 
+
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(pm10b_data_decomp)
 ```
 
 Assessing the decomposition of the $PM_{10}$ pollutant plot, we see that the trend line displays a consistently increasing trend that tapers off towards the end of the time series before slightly decreasing again. This does not give any clear information about the increase or decrease in the reported values over time, which suggests that long term trend in the levels of the $PM_{10}$ pollutant are not that pronounced. 
+
+**Figure 16:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_pm10b <- acf(pm10b_data$report_value, lag.max = 50, plot = FALSE)
@@ -292,9 +314,11 @@ plot(acf_pm10b, main = "ACF Plot for PM10")
 plot(pacf_pm10b, main = "PACF Plot for PM10")
 ```
 
-The ACF plot for $PM_{10}$ demonstrates a gradual decrease in autocorrelation lag values over time, indicating this pollutant data has apparent seasonal behavior. On the other hand, the PACF plot shows a noticeably significant correlation at the initial values up to the fifth lag, but the lag values quickly shrink to 0 or near 0 values for lags after the eighth lag. This suggests that $PM_{10}$ levels are dependent on past values, but don’t demonstrate strong autoregressive behavior. 
 
-$PM_{2.5}$: 
+The ACF plot for $PM_{10}$ (Figure 16) demonstrates a gradual decrease in autocorrelation lag values over time, indicating this pollutant data has apparent seasonal behavior. On the other hand, the PACF plot shows a noticeably significant correlation at the initial values up to the fifth lag, but the lag values quickly shrink to 0 or near 0 values for lags after the eighth lag. This suggests that $PM_{10}$ levels are dependent on past values, but don’t demonstrate strong autoregressive behavior. 
+
+
+**Figure 17:**  
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(pm25b_data, aes(x = datetime_est, y = report_value)) +
@@ -303,8 +327,11 @@ ggplot(pm25b_data, aes(x = datetime_est, y = report_value)) +
   theme_bw()
 ```
 
-From 2016 to 2024, the $PM_{2.5}$ pollutant shows a noticeable pattern of fluctuations for the reported values, with several significantly high peaks relative to the mean values of the data, which could be indicative of significant pollution events or changes in atmospheric conditions.
 
+From 2016 to 2024, the $PM_{2.5}$ (Figure 17) pollutant shows a noticeable pattern of fluctuations for the reported values, with several significantly high peaks relative to the mean values of the data, which could be indicative of significant pollution events or changes in atmospheric conditions.
+
+
+**Figure 18:** 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(pm25b_data_decomp)
@@ -312,12 +339,14 @@ plot(pm25b_data_decomp)
 
 The decomposition of the $PM_{2.5}$ time series shows more details of how the pollutant levels spike over time. The overall decreasing trend indicates that these levels go down over time, though the directional movement does not appear to be very strong. A clear repeating seasonal pattern can be observed and the random component captures irregularities in the data, all of which suggests we need to account for seasonality in the data. 
 
+**Figure 19:**
+
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_pm25b <- acf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
 pacf_pm25b <- pacf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
 par(mfrow = c(1, 2))
-plot(acf_pm25b, main = "ACF Plot for $PM_{2.5}$")
-plot(pacf_pm25b, main = "PACF Plot for $PM_{2.5}$")
+plot(acf_pm25b, main = "ACF Plot for PM2.5")
+plot(pacf_pm25b, main = "PACF Plot for PM2.5")
 ```
 
 For the $PM_{2.5}$ pollutant, the ACF plot demonstrates many significant lags that steadily decrease in magnitude for each lag, suggesting that the historical data do have an effect on the future predictions, but also that this autoregressive influence constantly decreases over time. On the other hand, the PACF plot shows an immediate reduction in magnitude after the first lag, suggesting that $PM_{2.5}$ concentrations are most affected by recent values rather than prior ones, indicating we should consider short-term autoregressive conditions in the modeling process.
@@ -467,14 +496,18 @@ We estimate that the effect of inversion on NO pollution is 0.108 (Standard Erro
 This suggests that our model found that there was a significant positive effect on CO pollution from the presence of an inversion, and a significant negative effect on Ozone and PM10B pollution from the presence of an inversion. 
 
 
-When plotting time series of the VARX model residuals, we see that the values are scattered somewhat randomly around a constant mean of zero. Moreover, these residuals resemble white noise. The only thing that we should be concerned about is the high occasional spikes but this could potentially be written off as a product of the large variation of data in the model.
+When plotting time series of the VARX model residuals (Figure 20), we see that the values are scattered somewhat randomly around a constant mean of zero. Moreover, these residuals resemble white noise. The only thing that we should be concerned about is the high occasional spikes but this could potentially be written off as a product of the large variation of data in the model.
+
+**Figure 20:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 res <- residuals(var_1)
 ts.plot(res, main = "Residuals of the VARX Model", ylab = "Residuals", xlab = "Time")
 ```
 
-The qq-plot for the model shows several points following the red zero line, we see some expected skewing on either side. This is not ideal in terms of a normality assumption but given the complexity of the model it would be surprising to see otherwise.
+The qq-plot (Figure 21) for the model shows several points following the red zero line, we see some expected skewing on either side. This is not ideal in terms of a normality assumption but given the complexity of the model it would be surprising to see otherwise.
+
+**Figure 21:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 # Checking the normality of residuals
@@ -483,7 +516,9 @@ qqnorm(res, main = "Q-Q Plot of Residuals")
 qqline(res, col = "red")
 ```
 
-If we examine the ACF and PACF plots of the residuals for the six pollutants, we see, in the ACF plots, that there are no real discerningly significant lags beyond zero. The PACF plots show some random, significant spikes but overall these are not too concerning as these account for some leftover patterns that the model did not account for.
+If we examine the ACF and PACF plots of the residuals for the six pollutants, we see, in the ACF plots (Figure 22), that there are no real discerningly significant lags beyond zero. The PACF plots (Figure 23) show some random, significant spikes but overall these are not too concerning as these account for some leftover patterns that the model did not account for.
+
+**Figure 22:**
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 residuals <- resid(var_1)
@@ -499,6 +534,8 @@ for (i in 1:6) {
 }
 ```
 
+**Figure 23:**
+
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 par(mfrow = c(2, 3))
 for (i in 1:6) {
@@ -507,11 +544,13 @@ for (i in 1:6) {
 }
 ```
 
-
+**Figure 24:**
 
 ```{r, out.width="75%", fig.align = 'center', echo=FALSE}
 knitr::include_graphics("/Users/zachstrennen/Documents/SquareFace_official_repo/PIT_air_pollution/forecast_plot.png")
 ```
+
+As seen in Figure 24, our approach to prediction generated subpar results, with the forecasts for NO, PM10B, SO2, PM25B, and CO looking nonsensical, with only the Ozone forecast looking logical. We will discuss the limitations of our forecasting approach in the discussion section.
 
 # Discussion
 
