@@ -317,8 +317,6 @@ forecast_1 <- predict(var_1, n.ahead = 2400, dumvar = fut_ev)
 ```
 
 ```{r}
-#var_ne <- VAR(pollutants, p = 27)
-#forecast_ne <- predict(var_ne, n.ahead = 2400)
-#plot(forecast_ne)
+plot(forecast_1)
 ```
 

@@ -1,6 +1,6 @@
 ---
 title: "The Effect of Inversion on Pittsburgh Air Pollution"
-author: "Jamie Kim, Daven Lagu, Vinay Maruri, Zachary Strennen"
+author: "Vinay Maruri, Jamie Kim, Daven Lagu, Zachary Strennen"
 date: "April 21st, 2024"
 output: pdf_document
 ---
@@ -34,6 +34,40 @@ The air pollutants in consideration are $SO_2$, CO, Ozone, NO, particulate matte
 Because we will be considering weather as external regressors in our model the data was also filtered to only include weather parameters reasonable to the study. These are inclusive of wind direction, wind speed, rainfall, peak wind gusts, relative humidity, and barometric pressure. 
 
 After our data cleaning process, we ended up with 72,074 observations from the air pollution dataset for our analysis. 
+
+```{r, eval = F}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+
+pittsburgh_pollution_data <- read_csv("Data/cleaned_pollution_data.csv")
+
+ppd_lawrenceville <- pittsburgh_pollution_data %>%
+  filter(site == "Lawrenceville" & is_valid == "TRUE")
+
+#summary statistics of lawrenceville data
+#expand lawrenceville data from long to wide
+#long to wide, only for the variables of interest (parameter and report value)--no need for anything else
+ppd_lawrenceville_wide <- ppd_lawrenceville %>%
+  spread(parameter, report_value)
+
+ppd_lawrenceville_wide <- ppd_lawrenceville_wide[, c(2, 9:24)]
+
+#collapse the data into a single row for each datetime_est
+ppd_lawrenceville_wide <- ppd_lawrenceville_wide %>%
+  group_by(datetime_est) %>%
+  summarise_all(mean, na.rm = TRUE)
+
+#fill na with zero
+ppd_lawrenceville_wide[is.na(ppd_lawrenceville_wide)] <- 0
+
+ppd_lawrenceville_wide <- ppd_lawrenceville_wide[, -c(1, 6, 13)]
+
+#create a descriptive table about the data
+library(vtable)
+st(ppd_lawrenceville_wide)
+```
+
 
 ```{r, out.width="75%", fig.align = 'center', echo=FALSE}
 knitr::include_graphics("/Users/zachstrennen/Desktop/Screenshot 2024-04-21 at 9.03.10 PM.png")
@@ -489,10 +523,114 @@ One possible utilization of this model and the resulting output in a real-world 
 
  - Blaylock, B. K. (2022). Herbie: Retrieve Numerical Weather Prediction Model Data (Version 2022.9.0) [Computer software]. https://doi.org/10.5281/zenodo.4567540 
 
-# Appendix 1
+# Appendix 1: VARX Model Selection
 
-# Appendix 2 
+# Appendix 2: VARX Model Results
 
 # Appendix 3: Python Code for Collecting Inversion Data
+
+```{python, eval = F}
+from herbie import Herbie, FastHerbie
+import xarray as xr
+import pandas as pd
+from itertools import chain
+
+dates = pd.date_range(
+    start="2016-01-01",
+    end="2024-04-10",
+    freq="1d",
+)
+
+H = Herbie(
+    "2021-07-19",
+    model="hrrr",
+    product="sfc",
+    fxx=0,
+)
+test = H.xarray(":TMP:")
+ds = xr.merge(test, compat = "override")
+test = [x.herbie.nearest_points(points=[(-80, 40)], names=["Pittsburgh-Lawrenceville"]) for x in test]
+
+FH = FastHerbie(dates, model="hrrr",product="sfc", fxx=[0])
+
+objs = FH.objects
+lst = []
+
+for o in objs:
+    print(o)
+    try:
+        test = o.xarray(":TMP:")
+        test = [x.herbie.nearest_points(points=[(-80, 40)], names=["Pittsburgh-Lawrenceville"]) for x in test]
+    except:
+        continue
+    lst.append(test)
+
+len(lst)
+
+len(FH.objects)
+
+lst
+
+flat_list = [
+    x
+    for xs in lst
+    for x in xs
+]
+
+flat_list
+
+df_lst = [x.to_dataframe() for x in flat_list]
+
+t2m = [df_lst[x*3] for x in range(0, 2991)]
+
+t = [df_lst[i] for i in range(1, len(df_lst)) if i%3 != 0]
+
+t_odd = [t[i] for i in range(len(t)) if i%2!=0]
+df_t = pd.concat(t_odd)
+
+df_t2m.drop('metpy_crs', axis = 1, inplace = True)
+df_t.drop('metpy_crs', axis = 1, inplace = True)
+
+combine = df_t.merge(df_t2m)
+
+#greater than 1 degree to be certain about inversion phenomena.
+combine['inversion'] = combine['t2m'] - combine['t'] > 1
+
+sum(combine['inversion'])
+len(combine)
+
+combine.to_csv('inversionseries.csv')
+
+```
+
+
+# Appendix 4: Pollution Forecasting Code
+
+```{r, eval = False}
+#let's make a forecast with var_1 
+#we have to forecast out the external regressors
+library(prophet)
+fut_ev <- matrix(0, nrow = 2400, ncol = ncol(environmentalvariables))
+#fut_ev[, 1] <- 1
+for(i in 1:8){
+  tmp <- as.data.frame(environmentalvariables[, i])
+  tmp$ds <- seq(1, nrow(tmp), by = 1)
+  #create an hourly sequence for the length of the data
+  colnames(tmp) <- c("y", "ds")
+  p <- prophet(tmp)
+  future <- make_future_dataframe(p, periods = 2400, freq = "hour")
+  forecast <- predict(p, future)
+  plot(p, forecast)
+  fut_ev[, i] <- forecast$yhat[72083:74482]
+}
+#resample the inversion data
+fut_ev[, 9] <- sample(environmentalvariables$inversion, 2400, replace = TRUE)
+fut_ev <- as.data.frame(fut_ev)
+colnames(fut_ev) <- colnames(environmentalvariables)
+colnames(fut_ev)[5] <- "Peak.Wind.Gust"
+forecast_1 <- predict(var_1, n.ahead = 2400, dumvar = fut_ev)
+plot(forecast_1)
+```
+
 
 
