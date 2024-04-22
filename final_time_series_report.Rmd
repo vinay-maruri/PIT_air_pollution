@@ -50,6 +50,7 @@ note: BP = Barometric Pressure (millimeters of mercury), CO = Carbon Monoxide (P
 To measure Pittsburgh air quality in the Lawrenceville area, we examined the pollutant parameters SO2, CO, Ozone, NO, PM10, and PM2.5 from January 2016 to April 2024, filtering by the criteria mentioned in the Data Cleaning section. The time series, time series decomposition, and ACF/PACF plots were generated for all 6 pollutants to look for factors like seasonality or trend that could potentially be important when fitting a model to the data. The plots for all pollutants are shown below:
 ```{r, echo=FALSE, include=FALSE}
 data <- read_csv("Data/cleaned_pollution_data.csv")
+pittsburgh_pollution_data <- read_csv("Data/cleaned_pollution_data.csv")
 ```
 
 ```{r, echo=FALSE, include=FALSE}
@@ -263,8 +264,6 @@ plot(pm25b_data_decomp)
 
 In the decomposition of PM25B time series, the observed component clearly shows these spikes in pollution levels. The trend component suggests there is some variation over time, though it does not display a strong directional movement. The seasonal pattern is not as pronounced as one might expect to see with other pollutants which could be due to the complex dynamics of the pollutants. Moreover, the random component captures irregularities.
 
-[PM25B ACF/PACF]
-
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_pm25b <- acf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
 pacf_pm25b <- pacf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
@@ -276,3 +275,197 @@ plot(pacf_pm25b, main = "PACF Plot for PM25B")
 The ACF plot for PM25B demonstrates a slowly decreasing correlation as lag increases which suggests that past values have some level of influence on future values even though this influence decays over time. The PACF plot shows an immediate drop after the first lag, implying that PM25B concentrations are more influenced by the recent values rather than by past values. This gives us some insight in modeling as it indicates the short-term conditions. 
 
 Taken together, we see strong evidence that, for all pollutants, there exists a trend and seasonality component that needs to be accounted for when selecting a model to accurately represent the relationships present in our pollutant data. This requires a modeling method that can show the complex relationships between multiple time series while capturing the dynamic changes of our hourly data pollutant data for all time in our 2016-2024 time range. Additionally, the modeling method we employ should be able to account for how the pollutant variables may be strongly related to each other, as the presence of all of these pollutants are strongly tied to the pollution caused by certain industrial sites in Pittsburgh. Finally, whatever model we select should be able to capture the effect of an outside factor such as inversion occurrence on the behavior of our multiple time series, even though inversion is not part of the system itself. A model that captures dynamic behavior of multiple interrelated pollutant time series, while still accounting for exogenous variables such as inversion occurrence all seem like very good supporting evidence for fitting a VARX model to our data.
+
+
+### Modeling approach
+
+To estimate how inversions affect the six pollutants, we built a VARX model with a matrix of SO2, CO, Ozone, NO, PM10, and PM2.5 as the response, and our environmental and weather variables as the response. This model is justified by our EDA, as explained in the previous section. Moreover, since each observation contains pollution measurements that are correlated with each other, it makes sense to estimate them simultaneously in the same model, just as a VARX model does. 
+
+Our model is defined as follows:
+
+$$ x_t = \theta_t + \tau u_t + \sum_{j=1}^{27} \Phi_j x_{t-j} + w_t $$
+
+As mentioned earlier, $x_t$ is a matrix of the six pollutants. $\theta_t$ is a trend fit to the model that acts as a deterministic regressor. $u_t$ is a matrix of external regressors which accounts for weather metrics (wind speed, barometric pressure, etc.) and also includes our binary indicator of inversions. Finally, for model improvement, we have $x_{t-j}$ which is a matrix of lagged pollutant values and $w_t$ which is simply just a vector of white noise. We selected 27 lags as the optimal lag number for the model after running model selection using the VARselect command with our external regressors, pollutant variables, and a maximum of 100 lags to consider (see Appendix 1). This procedure returned 27 lags selected by the Schwarz information criterion, which was a simpler model than 99 lags, and also matched our intuition from EDA that pollution today would be correlated with pollution 1 day ago, but not 4 days ago. 
+
+While such a complex model will produce several coefficient estimates for how each pollutant is affected by each pollutant, weather metric, and or the presence of an inversion, we are mainly concerned with the coefficient of for inversion for each of the six pollutants along with its significance given by a p-value. Thus, we will be able to estimate effect size of an inversion on each of the pollutants and whether it is statistically significant or not.
+
+
+[[FORECASTING STUFF]]
+
+
+```{r, echo=FALSE, include=FALSE}
+ppd_lawrenceville <- pittsburgh_pollution_data %>%
+  filter(site == "Lawrenceville" & is_valid == "TRUE")
+
+ppd_lawrenceville_SO2 <- ppd_lawrenceville %>%
+  filter(parameter == "SO2") %>%
+  mutate(hour = as.numeric(format(datetime_est, "%H")))
+
+ppd_lawrenceville_SO2_2019 <- ppd_lawrenceville_SO2 %>%
+  filter(year(datetime_est) == 2019)
+
+# Convert datetime_est to Date format (removing the time component)
+ppd_lawrenceville_SO2_2019 <- ppd_lawrenceville_SO2_2019 %>%
+  mutate(date = as.Date(datetime_est))
+
+# Calculate the mean report_value for each day
+daily_means <- ppd_lawrenceville_SO2_2019 %>%
+  group_by(date) %>%
+  summarise(mean_report_value = mean(report_value))
+
+# Calculate the median report_value for each day
+daily_medians <- ppd_lawrenceville_SO2_2019 %>%
+  group_by(date) %>%
+  summarise(median_report_value = median(report_value))
+
+# Calculate the abs. val mean report_value for each day
+abs_daily_means <- ppd_lawrenceville_SO2_2019 %>%
+  group_by(date) %>%
+  summarise(abs_mean_report_value = mean(abs(report_value)))
+
+ppd_lawrenceville_vars <- ppd_lawrenceville %>%
+  filter(parameter %in% c("NO", "SO2", "CO", "PM10B", "PM25B", "OZONE", "INT_T", "OUT_T", "SONICWS", "SONICWD", "OUT_RH", "BP", "Peak Wind Gust", "RAINFALL")) %>%
+  mutate(hour = as.numeric(format(datetime_est, "%H")))
+
+ppd_lawrenceville_PM10B <- ppd_lawrenceville_vars %>% 
+  filter(parameter == "PM10B") %>%
+  mutate(hour = as.numeric(format(datetime_est, "%H")))
+ppd_lawrenceville_PM10B$datetime_est <- as.POSIXct(ppd_lawrenceville_PM10B$datetime_est)
+
+# Create a sequence of datetime values starting from "2016-01-01 00:00:00" and incrementing by one hour
+datetime_seq <- seq(from = as.POSIXct("2016-01-01 00:00:00"), 
+                    by = "1 hour", 
+                    length.out = nrow(ppd_lawrenceville_PM10B))
+
+# Create a time series object using the report_value column and the datetime sequence
+PM10B_ts <- ts(ppd_lawrenceville_PM10B$report_value, start = c(2016, 1), frequency = 365.25*24)
+
+#long to wide, only for the variables of interest (parameter and report value)--no need for anything else
+ppd_lawrenceville_vars_wide <- ppd_lawrenceville_vars %>%
+  spread(parameter, report_value)
+
+#remove unnecessary columns
+ppd_lawrenceville_vars_wide <- subset(ppd_lawrenceville_vars_wide, select = -c(is_valid, unit, unit_description, highest_flag, aqs_parameter_category, hour, site))
+
+
+#collapse the data into a single row for each datetime_est
+ppd_lawrenceville_vars_wide <- ppd_lawrenceville_vars_wide %>%
+  group_by(datetime_est) %>%
+  summarise_all(mean, na.rm = TRUE)
+
+#fill na with zero
+ppd_lawrenceville_vars_wide[is.na(ppd_lawrenceville_vars_wide)] <- 0
+
+#split the data into pollutants and environmental variables
+pollutants <- ppd_lawrenceville_vars_wide[, c("datetime_est", "NO", "SO2", "CO", "PM10B", "PM25B", "OZONE")]
+environmentalvariables <- ppd_lawrenceville_vars_wide[, c("datetime_est", "BP", "INT_T", "OUT_RH", "OUT_T", 
+                                                          "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS")]
+
+#add the inversion data to the environmental variables
+inversion_data <- read.csv("inversionseries.csv")
+
+#keep only unique observations, so must de-dupe the data
+inversion_data <- inversion_data[, c("time", "inversion")]
+inversion_data <- inversion_data[!duplicated(inversion_data), ]
+
+#expand the series to include all dates, set NA to False
+inversion_data$time <- as.POSIXct(inversion_data$time)
+inversion_data <- padr::pad(inversion_data, interval = "hour")
+#replace the NA values with the value of the previous non-NA value
+inversion_data$inversion <- zoo::na.locf(inversion_data$inversion)
+
+#merge the inversion data with the environmental variables
+environmentalvariables <- merge(environmentalvariables, inversion_data, by.x = "datetime_est", by.y = "time", all.x = TRUE)
+
+#merge the two datasets together, then split them back out
+ppd_lawrenceville_vars_wide <- merge(pollutants, environmentalvariables, by = "datetime_est", all = TRUE)
+
+pollutants <- ppd_lawrenceville_vars_wide[, c("NO", "SO2", "CO", "PM10B", "PM25B", "OZONE")]
+environmentalvariables <- ppd_lawrenceville_vars_wide[, c("BP", "INT_T", "OUT_RH", "OUT_T", 
+                                                          "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS", "inversion")]
+
+#set the na values to false
+environmentalvariables$inversion[is.na(environmentalvariables$inversion)] <- "False"
+
+#convert character to true boolean
+environmentalvariables$inversion <- as.logical(environmentalvariables$inversion)
+
+rm(pittsburgh_pollution_data, ppd_lawrenceville, ppd_lawrenceville_vars, ppd_lawrenceville_vars_wide, inversion_data, daily_means, daily_medians)
+rm(abs_daily_means, ppd_lawrenceville_PM10B, ppd_lawrenceville_SO2, ppd_lawrenceville_SO2_2019)
+
+rm(PM10B_ts, datetime_seq)
+rm(train)
+
+#for some reason BP is zero for half of the data, so replace with trend values
+environmentalvariables$BP[environmentalvariables$BP == 0] <- mean(environmentalvariables$BP, na.rm = TRUE)
+
+var_1 <- VAR(pollutants, p = 27, type = "trend", exogen = environmentalvariables)
+```
+
+# Results
+
+[[PLACEHOLDER FOR INITIAL DISCUSSION OF RESULTS]]
+
+When plotting a time series of the VARX model residuals, we see that the values are scattered somewhat randomly around a constant mean of zero. Moreover, these residuals resemble white noise. The only thing that we should be concerned about is the high occasional spikes but this could potentially be written off as a product of the large variation of data in the model.
+
+```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
+res <- residuals(var_1)
+ts.plot(res, main = "Residuals of the VARX Model", ylab = "Residuals", xlab = "Time")
+```
+
+The qq-plot for the model shows several points following the red zero line, we see some expected skewing on either side. This is not ideal in terms of a normality assumption but given the complexity of the model it would be surprising to see otherwise.
+
+```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
+# Checking the normality of residuals
+library(MASS)
+qqnorm(res, main = "Q-Q Plot of Residuals")
+qqline(res, col = "red")
+```
+
+If we examine the ACF and PACF plots of the residuals for the six pollutants, we see, in the ACF plots, that there are no real discerningly significant lags beyond zero. The PACF plots show some random, significant spikes but overall these are not too concerning as these account for some leftover patterns that the model did not account for.
+
+```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
+
+residuals <- resid(var_1)
+
+# Names of pollutants 
+pollutant_names <- colnames(residuals)
+
+# Loop through the first few series and plot ACF 
+par(mfrow=c(2, 3))
+for (i in 1:6) {
+    # Plot ACF
+    acf(residuals[, i], main=paste("ACF of Residuals for\n", pollutant_names[i]))
+}
+```
+
+```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
+par(mfrow=c(2, 3))
+for (i in 1:6) {
+    # Plot PACF
+    pacf(residuals[, i], main=paste("PACF of Residuals for\n", pollutant_names[i]))
+}
+```
+
+# Discussion
+
+While we feel confident in our analysis process and the results it produced, there were some fundamental limitations to some of the processes we employed in this project. 
+
+The biggest constraint to performing the analysis was a lack of available data, because though we were able to receive the hourly weather data from 2016 to 2024 for multiple weather and pollutant parameters, much of this data was flawed or incomplete to the point that much of it could not be used. For example, many of the pollutant parameter values were missing during times when the other pollutant values were specified or certain parameters were reported as having a negative quantity of the pollutant appearing during certain time periods, which was an obvious impossibility and showed that there was a likely error in the data collection process for a section of our data. These unusable values of certain parameters meant that certain data simply had to be excluded, which limited the amount of data we had to work with and could have adversely impacted the overall accuracy of our analysis. 
+
+Another constraint to our analysis process was the location limitation of our data, because though our data was an aggregation of weather conditions and pollutant quantities collected at multiple sites (Liberty, North Braddock, Lawrenceville, Parkway East, South Fayette, Avalon, USS Clairton Sodar Site), the number of pollutants being tracked at each site was not consistent. For example, while the Lawrenceville site that we centered our analysis on contained all the pollutant parameters of SO2, CO, Ozone, NO, PM10, and PM2.5, the Liberty site only contained the pollutant data for the SO2 parameter, and the Avalon site contained only the SO2 and PM2.5 pollutants, etc. Even though the ideal method to test the validity of the model would have involved checking the inversion occurrence and pollutant behavior at all sites, the lack of pollutant data at certain sites made this testing impossible, limiting our ability to understand how atmospheric inversion affects the pollutants at all sites. If this project were to be repeated or expanded upon in the future, we would definitely want to collect data ourselves to ensure that we have enough usable data from all sites to enhance the viability and accuracy of our analysis.
+
+A final method of improvement would be reinforcing our method of inversion detection, as the approach we employed in this project was a naive approach that only used temperature and atmospheric data in regard to altitude to detect the occurrence of a cold air pocket being trapped under a hot air layer. While this approach should be valid, there may be a better approach to the detection process, though we could not find such reference material for building such a detection model or locate a data repository that contained data to locate an inversion occurrence. We only used the naive detection approach that also does not consider cases where changing winds might be caused by an environmental factor not linked to inversions, making the inversion detection process an important aspect of the project that should be improved in future iterations of the project. 
+
+Operational limitations and possible methods of improvements aside, our results do indicate that our project objective of identifying and quantifying the effect that inversion events have on pollutants in the Pittsburgh Lawrenceville area was successful. These results showed a statistically significant increase in CO and NO pollutants, a statistically significant decrease in Ozone and PM10, and no statistically significant effect on SO2 or PM2.5, giving us some insight about how the quantity of those variables change upon the occurrence of an inversion. One possible utilization of this model and the resulting output in a real-world scenario could be using the result of variable significance to determine what kind of aid to provide an area with increasing pollutant quantities. For example, if the interested party was concerned about health risks or air quality, the results of of our analysis show that the significant increase in CO and NO pollutant levels might necessitate providing some kind of tangible aid to the target area such as masks, carbon monoxide detectors, air filtration systems, etc. Being able to preemptively provide material support to increase the quality of life for residents of a certain area is an invaluable benefit to public health, and such an implementation would be a logical extension of our current work. The utility of our work could also potentially be extended to other sites in Pittsburgh and beyond, so others can use our model and inversion detection method to quantify the effect of inversion on certain pollutants in the area.   
+
+
+# References
+
+ - Jessica Guay, “American Lung Association report puts Pittsburgh area among worst for air quality”, CBS News, April 19, 2023, https://www.cbsnews.com/pittsburgh/news/dangerous-for-peoples-health-american-lung-association-report-puts-pittsburgh-among-worst-places-for-air-quality/
+ 
+ - Allegheny County Health Department, “Allegheny County Air Quality”, https://catalog.data.gov/dataset/allegheny-county-air-quality
+
+ - Benjamin, Stanley G., et al. "Diagnostic fields developed for hourly updated NOAA weather models." (2021). https://rapidrefresh.noaa.gov/Diag-vars-NOAA-TechMemo.pdf
+ 
+ - Sadar, Anthony J., “The Art and Science of Forecasting Morning Temperature Inversions” (2018), https://www.alleghenycounty.us/files/assets/county/v/1/government/health/documents/air-quality/sadar-emplus-article-reprint.pdf
