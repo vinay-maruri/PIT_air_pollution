@@ -24,13 +24,13 @@ This study investigates the effect of atmospheric inversions on air quality in P
 
 # Introduction
 
-Since the 1800s, the city of Pittsburgh’s air quality has been heavily influenced by the consistent presence of heavy manufacturing plants in the area. While air quality is no longer in the abysmal state it once was in the early-mid 1900s, when the steel industry was thriving in Western Pennsylvania, Pittsburgh still has some of the worst air quality in the nation according to the American Lung Association1. This is in part due to emissions from heavily polluting steel mills (operated by U.S. Steel) and petrochemical factories (operated by Shell) operating to the south and east of the city. An additional factor that contributes to air pollution in Pittsburgh is the phenomena of atmospheric inversion. Pittsburgh’s geography, which contains numerous mountains, plateaus, and river valleys can easily trap industrial pollutants when an inversion occurs because of the low cloud and fog layers that form, causing smog to be breathed in by Pittsburgh’s residents. Furthermore, because inversions generally also cause wind directions to change, the normal flow of pollutants away from the Pittsburgh area to the south is re-routed to flow over the Pittsburgh area, adding to the air quality problems. 
+Since the 1800s, the city of Pittsburgh’s air quality has been heavily influenced by the consistent presence of heavy manufacturing plants in the area. While air quality is no longer in the abysmal state it once was in the early-mid 1900s, when the steel industry was thriving in Western Pennsylvania, Pittsburgh still has some of the worst air quality in the nation according to the American Lung Association $^1$. This is in part due to emissions from heavily polluting steel mills (operated by U.S. Steel) and petrochemical factories (operated by Shell) operating to the south and east of the city. An additional factor that contributes to air pollution in Pittsburgh is the phenomena of atmospheric inversion. Pittsburgh’s geography, which contains numerous mountains, plateaus, and river valleys can easily trap industrial pollutants when an inversion occurs because of the low cloud and fog layers that form, causing smog to be breathed in by Pittsburgh’s residents. Furthermore, because inversions generally also cause wind directions to change, the normal flow of pollutants away from the Pittsburgh area to the south is re-routed to flow over the Pittsburgh area, adding to the air quality problems. 
 
 Our project aims to study air pollution in Pittsburgh by specifically understanding the effect of inversion on air pollution. We will calculate when inversion happens in the Pittsburgh area, and using 8 years of hourly pollution and weather data measurements, we will estimate the effect of inversion on the levels of CO, NO, S02, Ozone, $PM_{10}$, and $PM_{2.5}$ in Pittsburgh using a VARX model. We will then conclude by presenting forecasts of air pollution into the future using this model. 
 
 # Data 
 
-Our data came from two sources. The first data set is from the Allegheny County Health Department and contains hourly sensor data from various sensors across the greater Pittsburgh area. Each row in the data set pertains to a measurement of a specific air pollutant or weather parameter. Each of these measurements have a reported time and date along with the sensor location in which the measurements were taken. The data spans from January 2016 to present through April 2024. 
+Our data came from two sources. The first data set is from the Allegheny County Health Department and contains hourly sensor data from various sensors across the greater Pittsburgh area $^2$. Each row in the data set pertains to a measurement of a specific air pollutant or weather parameter. Each of these measurements have a reported time and date along with the sensor location in which the measurements were taken. The data spans from January 2016 to present through April 2024. 
 
 The data from the Allegheny County Health Department contain a variable called is_valid which is a boolean argument indicating whether the sensor returned a logically valid measurement for the parameter being measured. All values where is_valid was false were removed from the data. It was discovered that most data for sensors in the metropolitan Pittsburgh area did not have sufficient, continuous data at each location. Thus, we will only be considering measurements from Lawrenceville as this station had the most complete readings for all of the pollutants and environmental variables in consideration. All other locations were removed from the data.
 
@@ -80,7 +80,9 @@ st(ppd_lawrenceville_wide)
 knitr::include_graphics("/Users/zachstrennen/Desktop/Screenshot 2024-04-21 at 9.03.10 PM.png")
 ```
 
-note: BP = Barometric Pressure (millimeters of mercury), CO = Carbon Monoxide (Parts per Billion),  INT_T = Internal Temperature of Sensor (Degrees Celsius), NO = Nitric Oxide (Parts per Billion), OUT_RH = Relative Humidity Outside the Monitoring Station (Percent), OZONE = Ozone Pollution (Parts per Million), Peak Wind Gust (miles per hour), $PM_{10}$ (micrograms per cubic meter), $PM_{2.5}$ (micrograms per cubic meter), RAINFALL = rainfall at monitoring station (Inches), $SO_2$ (Parts per Billion), SONICWD = direction of wind at monitoring station (Degrees), SONICWS = wind speed measured at monitoring station (miles per hour)The second data set is from raw GRIB file outputs for the National Oceanic and Atmospheric Administration's (NOAA) High Resolution Rapid Fresh (HRRF) atmospheric model3. We took the model's measurements of temperature (in Kelvin) at various altitudes over Pittsburgh from January 2016 to April 2024 to match the time span of the air pollution data. Since the model stores measurements by exact latitude and longitude coordinates, we used an approximate location (40.4676$^\circ$ N, 79.9606$^\circ$ W) to represent where the Lawrenceville monitoring station was located and found the nearest set of coordinates to that location in the model to take temperature observations from. The dataset is composed of daily observations of temperature at the surface and the 2-m temperature to represent temperature in the atmosphere in Pittsburgh.
+note: BP = Barometric Pressure (millimeters of mercury), CO = Carbon Monoxide (Parts per Billion),  INT_T = Internal Temperature of Sensor (Degrees Celsius), NO = Nitric Oxide (Parts per Billion), OUT_RH = Relative Humidity Outside the Monitoring Station (Percent), OZONE = Ozone Pollution (Parts per Million), Peak Wind Gust (miles per hour), $PM_{10}$ (micrograms per cubic meter), $PM_{2.5}$ (micrograms per cubic meter), RAINFALL = rainfall at monitoring station (Inches), $SO_2$ (Parts per Billion), SONICWD = direction of wind at monitoring station (Degrees), SONICWS = wind speed measured at monitoring station (miles per hour)
+
+The second data set is from raw GRIB file outputs for the National Oceanic and Atmospheric Administration's (NOAA) High Resolution Rapid Fresh (HRRF) atmospheric model$^{3,5}$. We took the model's measurements of temperature (in Kelvin) at various altitudes over Pittsburgh from January 2016 to April 2024 to match the time span of the air pollution data. Since the model stores measurements by exact latitude and longitude coordinates, we used an approximate location (40.4676$^\circ$ N, 79.9606$^\circ$ W) to represent where the Lawrenceville monitoring station was located and found the nearest set of coordinates to that location in the model to take temperature observations from. The dataset is composed of daily observations of temperature at the surface and the 2-m temperature to represent temperature in the atmosphere in Pittsburgh.
 
 # Methods
 
@@ -88,7 +90,7 @@ note: BP = Barometric Pressure (millimeters of mercury), CO = Carbon Monoxide (P
 
 Given our constraints as non-experts in the area of meteorology and climate science, we took a naive, cautious approach to defining an inversion. Knowing that inversions are generally detected when temperature rises from the surface into the atmosphere, instead of the normal pattern of temperatures cooling from the surface into the atmosphere, we decided that a day would be an inversion day if this happened. 
 
-From the NOAA data, we compared the surface temperature with the 2-m temperature to decide whether an inversion took place or not on a given day. Using this method, 22.5% of days from January 2016 to April 2024 were classified as inversion days. This differs notably from expert estimates of inversion from Allegheny County, however we chose to use our estimates for this project since the County’s estimates do not extend past 20174.
+From the NOAA data, we compared the surface temperature with the 2-m temperature to decide whether an inversion took place or not on a given day. Using this method, 22.5% of days from January 2016 to April 2024 were classified as inversion days. This differs notably from expert estimates of inversion from Allegheny County $^4$, however we chose to use our estimates for this project since the County’s estimates do not extend past 20174.
 
 ### Exploratory Data Analysis
 
@@ -572,15 +574,15 @@ One possible utilization of this model and the resulting output in a real-world 
 
 # References
 
- - Jessica Guay, “American Lung Association report puts Pittsburgh area among worst for air quality”, CBS News, April 19, 2023, https://www.cbsnews.com/pittsburgh/news/dangerous-for-peoples-health-american-lung-association-report-puts-pittsburgh-among-worst-places-for-air-quality/
+1] Jessica Guay, “American Lung Association report puts Pittsburgh area among worst for air quality”, CBS News, April 19, 2023, https://www.cbsnews.com/pittsburgh/news/dangerous-for-peoples-health-american-lung-association-report-puts-pittsburgh-among-worst-places-for-air-quality/
  
- - Allegheny County Health Department, “Allegheny County Air Quality”, https://catalog.data.gov/dataset/allegheny-county-air-quality
+2] Allegheny County Health Department, “Allegheny County Air Quality”, https://catalog.data.gov/dataset/allegheny-county-air-quality
 
- - Benjamin, Stanley G., et al. "Diagnostic fields developed for hourly updated NOAA weather models." (2021). https://rapidrefresh.noaa.gov/Diag-vars-NOAA-TechMemo.pdf
+3] Benjamin, Stanley G., et al. "Diagnostic fields developed for hourly updated NOAA weather models." (2021). https://rapidrefresh.noaa.gov/Diag-vars-NOAA-TechMemo.pdf
  
- - Sadar, Anthony J., “The Art and Science of Forecasting Morning Temperature Inversions” (2018), https://www.alleghenycounty.us/files/assets/county/v/1/government/health/documents/air-quality/sadar-emplus-article-reprint.pdf
+4] Sadar, Anthony J., “The Art and Science of Forecasting Morning Temperature Inversions” (2018), https://www.alleghenycounty.us/files/assets/county/v/1/government/health/documents/air-quality/sadar-emplus-article-reprint.pdf
 
- - Blaylock, B. K. (2022). Herbie: Retrieve Numerical Weather Prediction Model Data (Version 2022.9.0) [Computer software]. https://doi.org/10.5281/zenodo.4567540 
+5] Blaylock, B. K. (2022). Herbie: Retrieve Numerical Weather Prediction Model Data (Version 2022.9.0) [Computer software]. https://doi.org/10.5281/zenodo.4567540 
 
 # Appendix 1: VARX Model Selection
 
