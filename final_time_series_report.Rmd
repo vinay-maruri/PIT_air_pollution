@@ -487,3 +487,12 @@ One possible utilization of this model and the resulting output in a real-world 
  
  - Sadar, Anthony J., “The Art and Science of Forecasting Morning Temperature Inversions” (2018), https://www.alleghenycounty.us/files/assets/county/v/1/government/health/documents/air-quality/sadar-emplus-article-reprint.pdf
 
+ - Blaylock, B. K. (2022). Herbie: Retrieve Numerical Weather Prediction Model Data (Version 2022.9.0) [Computer software]. https://doi.org/10.5281/zenodo.4567540 
+
+# Appendix 1
+
+# Appendix 2 
+
+# Appendix 3: Python Code for Collecting Inversion Data
+
+
