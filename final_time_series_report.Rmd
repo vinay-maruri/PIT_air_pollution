@@ -50,32 +50,32 @@ pittsburgh_pollution_data <- read_csv("Data/cleaned_pollution_data.csv")
 ppd_lawrenceville <- pittsburgh_pollution_data %>%
   filter(site == "Lawrenceville" & is_valid == "TRUE")
 
-#summary statistics of lawrenceville data
-#expand lawrenceville data from long to wide
-#long to wide, only for the variables of interest (parameter and report value)--no need for anything else
+# summary statistics of lawrenceville data
+# expand lawrenceville data from long to wide
+# long to wide, only for the variables of interest (parameter and report value)--no need for anything else
 ppd_lawrenceville_wide <- ppd_lawrenceville %>%
   spread(parameter, report_value)
 
 ppd_lawrenceville_wide <- ppd_lawrenceville_wide[, c(2, 9:24)]
 
-#collapse the data into a single row for each datetime_est
+# collapse the data into a single row for each datetime_est
 ppd_lawrenceville_wide <- ppd_lawrenceville_wide %>%
   group_by(datetime_est) %>%
   summarise_all(mean, na.rm = TRUE)
 
-#fill na with zero
+# fill na with zero
 ppd_lawrenceville_wide[is.na(ppd_lawrenceville_wide)] <- 0
 
 ppd_lawrenceville_wide <- ppd_lawrenceville_wide[, -c(1, 6, 13)]
 
-#create a descriptive table about the data
+# create a descriptive table about the data
 library(vtable)
 st(ppd_lawrenceville_wide)
 ```
 
 
 ```{r, out.width="75%", fig.align = 'center', echo=FALSE}
-#knitr::include_graphics("/Users/zachstrennen/Desktop/Screenshot 2024-04-21 at 9.03.10 PM.png")
+knitr::include_graphics("/Users/zachstrennen/Desktop/Screenshot 2024-04-21 at 9.03.10 PM.png")
 ```
 
 note: BP = Barometric Pressure (millimeters of mercury), CO = Carbon Monoxide (Parts per Billion),  INT_T = Internal Temperature of Sensor (Degrees Celsius), NO = Nitric Oxide (Parts per Billion), OUT_RH = Relative Humidity Outside the Monitoring Station (Percent), OZONE = Ozone Pollution (Parts per Million), Peak Wind Gust (miles per hour), $PM_{10}$ (micrograms per cubic meter), $PM_{2.5}$ (micrograms per cubic meter), RAINFALL = rainfall at monitoring station (Inches), $SO_2$ (Parts per Billion), SONICWD = direction of wind at monitoring station (Degrees), SONICWS = wind speed measured at monitoring station (miles per hour)The second data set is from raw GRIB file outputs for the National Oceanic and Atmospheric Administration's (NOAA) High Resolution Rapid Fresh (HRRF) atmospheric model3. We took the model's measurements of temperature (in Kelvin) at various altitudes over Pittsburgh from January 2016 to April 2024 to match the time span of the air pollution data. Since the model stores measurements by exact latitude and longitude coordinates, we used an approximate location (40.4676$^\circ$ N, 79.9606$^\circ$ W) to represent where the Lawrenceville monitoring station was located and found the nearest set of coordinates to that location in the model to take temperature observations from. The dataset is composed of daily observations of temperature at the surface and the 2-m temperature to represent temperature in the atmosphere in Pittsburgh.
@@ -122,29 +122,29 @@ pm25t_data <- data %>% filter(parameter == "PM25T")
 pm25t_data <- pm25t_data[, c("datetime_est", "site", "report_value")]
 ```
 ```{r, echo=FALSE, include=FALSE}
-#decompose the time series data
-lawrenceville_so2_data_ts <- ts(filter(so2_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+# decompose the time series data
+lawrenceville_so2_data_ts <- ts(filter(so2_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 so2_data_decomp <- decompose(lawrenceville_so2_data_ts)
 
-lawrenceville_co_data_ts <- ts(filter(co_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+lawrenceville_co_data_ts <- ts(filter(co_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 co_data_decomp <- decompose(lawrenceville_co_data_ts)
 
-lawrenceville_ozone_data_ts <- ts(filter(ozone_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+lawrenceville_ozone_data_ts <- ts(filter(ozone_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 ozone_data_decomp <- decompose(lawrenceville_ozone_data_ts)
 
-lawrenceville_no_data_ts <- ts(filter(no_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+lawrenceville_no_data_ts <- ts(filter(no_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 no_data_decomp <- decompose(lawrenceville_no_data_ts)
 
-lawrenceville_no2_data_ts <- ts(filter(no2_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+lawrenceville_no2_data_ts <- ts(filter(no2_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 # no2_data_decomp <- decompose(lawrenceville_no2_data_ts)
 
-lawrenceville_pm10b_data_ts <- ts(filter(pm10b_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+lawrenceville_pm10b_data_ts <- ts(filter(pm10b_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 pm10b_data_decomp <- decompose(lawrenceville_pm10b_data_ts)
 
-lawrenceville_pm25b_data_ts <- ts(filter(pm25b_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+lawrenceville_pm25b_data_ts <- ts(filter(pm25b_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 pm25b_data_decomp <- decompose(lawrenceville_pm25b_data_ts)
 
-lawrenceville_pm25t_data_ts <- ts(filter(pm25t_data, site == "Lawrenceville")$report_value, frequency = 24*365)
+lawrenceville_pm25t_data_ts <- ts(filter(pm25t_data, site == "Lawrenceville")$report_value, frequency = 24 * 365)
 # pm25t_data_decomp <- decompose(lawrenceville_pm25t_data_ts)
 ```
 
@@ -153,9 +153,9 @@ lawrenceville_pm25t_data_ts <- ts(filter(pm25t_data, site == "Lawrenceville")$re
 SO2:
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
-ggplot(so2_data, aes(x = datetime_est, y = report_value)) + 
-  geom_line() + 
-  labs(title= "$SO_2$ Time Series Plot", x = "Time", y = "Reported $SO_2$ value (PPM)") +
+ggplot(so2_data, aes(x = datetime_est, y = report_value)) +
+  geom_line() +
+  labs(title = "$SO_2$ Time Series Plot", x = "Time", y = "Reported $SO_2$ value (PPM)") +
   theme_bw()
 ```
 
@@ -170,7 +170,7 @@ Here, we see a seasonal pattern in our pollutant data for $SO_2$ exists, as well
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_so2 <- acf(so2_data$report_value, lag.max = 50, plot = FALSE)
 pacf_so2 <- pacf(so2_data$report_value, lag.max = 50, plot = FALSE)
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 plot(acf_so2, main = "ACF Plot for $SO_2$")
 plot(pacf_so2, main = "PACF Plot for $SO_2$")
 ```
@@ -183,8 +183,8 @@ CO:
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(co_data, aes(x = datetime_est, y = report_value)) +
-  geom_line() + 
-  labs(title= "CO Time Series Plot", x = "Time", y = "Reported CO value (PPB)") +
+  geom_line() +
+  labs(title = "CO Time Series Plot", x = "Time", y = "Reported CO value (PPB)") +
   theme_bw()
 ```
 
@@ -201,7 +201,7 @@ The decomposition of the time series for CO clarifies the nature of fluctuations
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_co <- acf(co_data$report_value, lag.max = 50, plot = FALSE)
 pacf_co <- pacf(co_data$report_value, lag.max = 50, plot = FALSE)
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 plot(acf_co, main = "ACF Plot for CO")
 plot(pacf_co, main = "PACF Plot for CO")
 ```
@@ -212,8 +212,8 @@ Ozone:
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(ozone_data, aes(x = datetime_est, y = report_value)) +
-  geom_line() + 
-  labs(title= "Ozone Time Series Plot", x = "Time", y = "Reported Ozone value (PPM)") +
+  geom_line() +
+  labs(title = "Ozone Time Series Plot", x = "Time", y = "Reported Ozone value (PPM)") +
   theme_bw()
 ```
 
@@ -228,7 +228,7 @@ From the Ozone decomposition plot, we observed a trend component that does not f
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_ozone <- acf(ozone_data$report_value, lag.max = 50, plot = FALSE)
 pacf_ozone <- pacf(ozone_data$report_value, lag.max = 50, plot = FALSE)
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 plot(acf_ozone, main = "ACF Plot for Ozone")
 plot(pacf_ozone, main = "PACF Plot for Ozone")
 ```
@@ -239,10 +239,9 @@ NO:
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(no_data, aes(x = datetime_est, y = report_value)) +
-  geom_line() + 
-  labs(title= "NO Time Series Plot", x = "Time", y = "Reported NO value (PPB)") +
+  geom_line() +
+  labs(title = "NO Time Series Plot", x = "Time", y = "Reported NO value (PPB)") +
   theme_bw()
-
 ```
 
 The time series plot of NO levels show a series of spikes across the eight or nine year span from 2016 to 2024. Unlike CO, these spikes appear in more erratic patterns suggesting that NO emissions in Pittsburgh may be influenced by factors other than the consistent seasonal cycles. Inversions could be contributing to these high peaks observed, especially considering NO is primarily sourced from industrial processes.
@@ -256,7 +255,7 @@ The decomposition of the NO time series reveals the individual components more c
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_no <- acf(no_data$report_value, lag.max = 50, plot = FALSE)
 pacf_no <- pacf(no_data$report_value, lag.max = 50, plot = FALSE)
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 plot(acf_no, main = "ACF Plot for NO")
 plot(pacf_no, main = "PACF Plot for NO")
 ```
@@ -267,8 +266,8 @@ $PM_{10}$:
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(pm10b_data, aes(x = datetime_est, y = report_value)) +
-  geom_line() + 
-  labs(title= "PM10B Time Series Plot", x = "Time", y = "Reported PM10B value (UG/M^3)") +
+  geom_line() +
+  labs(title = "PM10B Time Series Plot", x = "Time", y = "Reported PM10B value (UG/M^3)") +
   theme_bw()
 ```
 
@@ -283,7 +282,7 @@ Decomposing this time series, we see the trend, seasonality, and random componen
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_pm10b <- acf(pm10b_data$report_value, lag.max = 50, plot = FALSE)
 pacf_pm10b <- pacf(pm10b_data$report_value, lag.max = 50, plot = FALSE)
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 plot(acf_pm10b, main = "ACF Plot for PM10")
 plot(pacf_pm10b, main = "PACF Plot for PM10")
 ```
@@ -294,8 +293,8 @@ $PM_{2.5}$:
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(pm25b_data, aes(x = datetime_est, y = report_value)) +
-  geom_line() + 
-  labs(title= "$PM_{2.5}$ Time Series Plot", x = "Time", y = "Reported $PM_{2.5}$ value (UG/M^3)") +
+  geom_line() +
+  labs(title = "$PM_{2.5}$ Time Series Plot", x = "Time", y = "Reported $PM_{2.5}$ value (UG/M^3)") +
   theme_bw()
 ```
 
@@ -310,7 +309,7 @@ In the decomposition of $PM_{2.5}$ time series, the observed component clearly s
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_pm25b <- acf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
 pacf_pm25b <- pacf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
-par(mfrow=c(1,2))
+par(mfrow = c(1, 2))
 plot(acf_pm25b, main = "ACF Plot for $PM_{2.5}$")
 plot(pacf_pm25b, main = "PACF Plot for $PM_{2.5}$")
 ```
@@ -336,7 +335,6 @@ While such a complex model will produce several coefficient estimates for how ea
 # Forecast Approach
 
 Forecasting in this project was admittedly a secondary concern since our research question is primarily a regression and inference problem. However, we can generate pollution forecasts for our model using a few assumptions. First, we assume that each of our external regressor variables follows a time series process, and that each of these time series processes won’t change or drift in the future. This allows us to project out the external regressors into the future. Second, we assume that the distribution of inversion days also stays the same into the future. This means that a future day has a 22.5% probability of being an inversion day. This allows us to generate future distributions of inversion randomly using simulations and generate a range in our pollution forecasts. 
-
 
 
 ```{r, echo=FALSE, include=FALSE}
@@ -373,67 +371,73 @@ ppd_lawrenceville_vars <- ppd_lawrenceville %>%
   filter(parameter %in% c("NO", "SO2", "CO", "PM10B", "PM25B", "OZONE", "INT_T", "OUT_T", "SONICWS", "SONICWD", "OUT_RH", "BP", "Peak Wind Gust", "RAINFALL")) %>%
   mutate(hour = as.numeric(format(datetime_est, "%H")))
 
-ppd_lawrenceville_PM10B <- ppd_lawrenceville_vars %>% 
+ppd_lawrenceville_PM10B <- ppd_lawrenceville_vars %>%
   filter(parameter == "PM10B") %>%
   mutate(hour = as.numeric(format(datetime_est, "%H")))
 ppd_lawrenceville_PM10B$datetime_est <- as.POSIXct(ppd_lawrenceville_PM10B$datetime_est)
 
 # Create a sequence of datetime values starting from "2016-01-01 00:00:00" and incrementing by one hour
-datetime_seq <- seq(from = as.POSIXct("2016-01-01 00:00:00"), 
-                    by = "1 hour", 
-                    length.out = nrow(ppd_lawrenceville_PM10B))
+datetime_seq <- seq(
+  from = as.POSIXct("2016-01-01 00:00:00"),
+  by = "1 hour",
+  length.out = nrow(ppd_lawrenceville_PM10B)
+)
 
 # Create a time series object using the report_value column and the datetime sequence
-PM10B_ts <- ts(ppd_lawrenceville_PM10B$report_value, start = c(2016, 1), frequency = 365.25*24)
+PM10B_ts <- ts(ppd_lawrenceville_PM10B$report_value, start = c(2016, 1), frequency = 365.25 * 24)
 
-#long to wide, only for the variables of interest (parameter and report value)--no need for anything else
+# long to wide, only for the variables of interest (parameter and report value)--no need for anything else
 ppd_lawrenceville_vars_wide <- ppd_lawrenceville_vars %>%
   spread(parameter, report_value)
 
-#remove unnecessary columns
+# remove unnecessary columns
 ppd_lawrenceville_vars_wide <- subset(ppd_lawrenceville_vars_wide, select = -c(is_valid, unit, unit_description, highest_flag, aqs_parameter_category, hour, site))
 
 
-#collapse the data into a single row for each datetime_est
+# collapse the data into a single row for each datetime_est
 ppd_lawrenceville_vars_wide <- ppd_lawrenceville_vars_wide %>%
   group_by(datetime_est) %>%
   summarise_all(mean, na.rm = TRUE)
 
-#fill na with zero
+# fill na with zero
 ppd_lawrenceville_vars_wide[is.na(ppd_lawrenceville_vars_wide)] <- 0
 
-#split the data into pollutants and environmental variables
+# split the data into pollutants and environmental variables
 pollutants <- ppd_lawrenceville_vars_wide[, c("datetime_est", "NO", "SO2", "CO", "PM10B", "PM25B", "OZONE")]
-environmentalvariables <- ppd_lawrenceville_vars_wide[, c("datetime_est", "BP", "INT_T", "OUT_RH", "OUT_T", 
-                                                          "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS")]
+environmentalvariables <- ppd_lawrenceville_vars_wide[, c(
+  "datetime_est", "BP", "INT_T", "OUT_RH", "OUT_T",
+  "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS"
+)]
 
-#add the inversion data to the environmental variables
+# add the inversion data to the environmental variables
 inversion_data <- read.csv("inversionseries.csv")
 
-#keep only unique observations, so must de-dupe the data
+# keep only unique observations, so must de-dupe the data
 inversion_data <- inversion_data[, c("time", "inversion")]
 inversion_data <- inversion_data[!duplicated(inversion_data), ]
 
-#expand the series to include all dates, set NA to False
+# expand the series to include all dates, set NA to False
 inversion_data$time <- as.POSIXct(inversion_data$time)
 inversion_data <- padr::pad(inversion_data, interval = "hour")
-#replace the NA values with the value of the previous non-NA value
+# replace the NA values with the value of the previous non-NA value
 inversion_data$inversion <- zoo::na.locf(inversion_data$inversion)
 
-#merge the inversion data with the environmental variables
+# merge the inversion data with the environmental variables
 environmentalvariables <- merge(environmentalvariables, inversion_data, by.x = "datetime_est", by.y = "time", all.x = TRUE)
 
-#merge the two datasets together, then split them back out
+# merge the two datasets together, then split them back out
 ppd_lawrenceville_vars_wide <- merge(pollutants, environmentalvariables, by = "datetime_est", all = TRUE)
 
 pollutants <- ppd_lawrenceville_vars_wide[, c("NO", "SO2", "CO", "PM10B", "PM25B", "OZONE")]
-environmentalvariables <- ppd_lawrenceville_vars_wide[, c("BP", "INT_T", "OUT_RH", "OUT_T", 
-                                                          "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS", "inversion")]
+environmentalvariables <- ppd_lawrenceville_vars_wide[, c(
+  "BP", "INT_T", "OUT_RH", "OUT_T",
+  "Peak Wind Gust", "RAINFALL", "SONICWD", "SONICWS", "inversion"
+)]
 
-#set the na values to false
+# set the na values to false
 environmentalvariables$inversion[is.na(environmentalvariables$inversion)] <- "False"
 
-#convert character to true boolean
+# convert character to true boolean
 environmentalvariables$inversion <- as.logical(environmentalvariables$inversion)
 
 rm(pittsburgh_pollution_data, ppd_lawrenceville, ppd_lawrenceville_vars, ppd_lawrenceville_vars_wide, inversion_data, daily_means, daily_medians)
@@ -442,7 +446,7 @@ rm(abs_daily_means, ppd_lawrenceville_PM10B, ppd_lawrenceville_SO2, ppd_lawrence
 rm(PM10B_ts, datetime_seq)
 rm(train)
 
-#for some reason BP is zero for half of the data, so replace with trend values
+# for some reason BP is zero for half of the data, so replace with trend values
 environmentalvariables$BP[environmentalvariables$BP == 0] <- mean(environmentalvariables$BP, na.rm = TRUE)
 
 var_1 <- VAR(pollutants, p = 27, type = "trend", exogen = environmentalvariables)
@@ -476,26 +480,31 @@ qqline(res, col = "red")
 If we examine the ACF and PACF plots of the residuals for the six pollutants, we see, in the ACF plots, that there are no real discerningly significant lags beyond zero. The PACF plots show some random, significant spikes but overall these are not too concerning as these account for some leftover patterns that the model did not account for.
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
-
 residuals <- resid(var_1)
 
-# Names of pollutants 
+# Names of pollutants
 pollutant_names <- colnames(residuals)
 
-# Loop through the first few series and plot ACF 
-par(mfrow=c(2, 3))
+# Loop through the first few series and plot ACF
+par(mfrow = c(2, 3))
 for (i in 1:6) {
-    # Plot ACF
-    acf(residuals[, i], main=paste("ACF of Residuals for\n", pollutant_names[i]))
+  # Plot ACF
+  acf(residuals[, i], main = paste("ACF of Residuals for\n", pollutant_names[i]))
 }
 ```
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
-par(mfrow=c(2, 3))
+par(mfrow = c(2, 3))
 for (i in 1:6) {
-    # Plot PACF
-    pacf(residuals[, i], main=paste("PACF of Residuals for\n", pollutant_names[i]))
+  # Plot PACF
+  pacf(residuals[, i], main = paste("PACF of Residuals for\n", pollutant_names[i]))
 }
+```
+
+
+
+```{r, out.width="75%", fig.align = 'center', echo=FALSE}
+knitr::include_graphics("/Users/zachstrennen/Documents/SquareFace_official_repo/PIT_air_pollution/forecast_plot.png")
 ```
 
 # Discussion
@@ -1924,15 +1933,15 @@ combine.to_csv('inversionseries.csv')
 # Appendix 4: Pollution Forecasting Code
 
 ```{r, eval = F}
-#let's make a forecast with var_1 
-#we have to forecast out the external regressors
+# let's make a forecast with var_1
+# we have to forecast out the external regressors
 library(prophet)
 fut_ev <- matrix(0, nrow = 2400, ncol = ncol(environmentalvariables))
-#fut_ev[, 1] <- 1
-for(i in 1:8){
+# fut_ev[, 1] <- 1
+for (i in 1:8) {
   tmp <- as.data.frame(environmentalvariables[, i])
   tmp$ds <- seq(1, nrow(tmp), by = 1)
-  #create an hourly sequence for the length of the data
+  # create an hourly sequence for the length of the data
   colnames(tmp) <- c("y", "ds")
   p <- prophet(tmp)
   future <- make_future_dataframe(p, periods = 2400, freq = "hour")
@@ -1940,7 +1949,7 @@ for(i in 1:8){
   plot(p, forecast)
   fut_ev[, i] <- forecast$yhat[72083:74482]
 }
-#resample the inversion data
+# resample the inversion data
 fut_ev[, 9] <- sample(environmentalvariables$inversion, 2400, replace = TRUE)
 fut_ev <- as.data.frame(fut_ev)
 colnames(fut_ev) <- colnames(environmentalvariables)
@@ -1948,6 +1957,3 @@ colnames(fut_ev)[5] <- "Peak.Wind.Gust"
 forecast_1 <- predict(var_1, n.ahead = 2400, dumvar = fut_ev)
 plot(forecast_1)
 ```
-
-
-
