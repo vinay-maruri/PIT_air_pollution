@@ -15,13 +15,13 @@ library(vars)
 
 # Executive Summary
 
-This study investigates the effect of atmospheric inversions on air quality in Pittsburgh, specifically focusing on how said meteorological events impact pollutant levels. Utilizing years of data from both the Allegheny County Health Department and the NOAA High Resolution Rapid Refresh model, we conducted a detailed analysis on pollutants such as SO2, CO, Ozone, NO, $PM_{10}$, and PM2.5 as well as other weather variables in the Lawrenceville area. To evaluate how inversions affect these pollutants, we developed a VARX model and defined inversions as when cold air is trapped below warmer air thus affecting local wind patterns. Our findings reveal that inversions significantly increase NO and CO levels and significantly decrease Ozone and $PM_{10}$, while having no significant effect on SO2 and PM2.5. In summation, this study emphasizes the complex relationships between weather phenomena and urban pollution allowing us to offer insights on environmental health recommendations and future air quality management.
+This study investigates the effect of atmospheric inversions on air quality in Pittsburgh, specifically focusing on how said meteorological events impact pollutant levels. Utilizing years of data from both the Allegheny County Health Department and the NOAA High Resolution Rapid Refresh model, we conducted a detailed analysis on pollutants such as $SO_2$, CO, Ozone, NO, $PM_{10}$, and $PM_{2.5}$ as well as other weather variables in the Lawrenceville area. To evaluate how inversions affect these pollutants, we developed a VARX model and defined inversions as when cold air is trapped below warmer air thus affecting local wind patterns. Our findings reveal that inversions significantly increase NO and CO levels and significantly decrease Ozone and $PM_{10}$, while having no significant effect on $SO_2$ and $PM_{2.5}$. In summation, this study emphasizes the complex relationships between weather phenomena and urban pollution allowing us to offer insights on environmental health recommendations and future air quality management.
 
 # Introduction
 
 Since the 1800s, the city of Pittsburgh’s air quality has been heavily influenced by the consistent presence of heavy manufacturing plants in the area. While air quality is no longer in the abysmal state it once was in the early-mid 1900s, when the steel industry was thriving in Western Pennsylvania, Pittsburgh still has some of the worst air quality in the nation according to the American Lung Association1. This is in part due to emissions from heavily polluting steel mills (operated by U.S. Steel) and petrochemical factories (operated by Shell) operating to the south and east of the city. An additional factor that contributes to air pollution in Pittsburgh is the phenomena of atmospheric inversion. Pittsburgh’s geography, which contains numerous mountains, plateaus, and river valleys can easily trap industrial pollutants when an inversion occurs because of the low cloud and fog layers that form, causing smog to be breathed in by Pittsburgh’s residents. Furthermore, because inversions generally also cause wind directions to change, the normal flow of pollutants away from the Pittsburgh area to the south is re-routed to flow over the Pittsburgh area, adding to the air quality problems. 
 
-Our project aims to study air pollution in Pittsburgh by specifically understanding the effect of inversion on air pollution. We will calculate when inversion happens in the Pittsburgh area, and using 8 years of hourly pollution and weather data measurements, we will estimate the effect of inversion on the levels of CO, NO, S02, Ozone, $PM_{10}$B, and PM25B in Pittsburgh using a VARX model. We will then conclude by presenting forecasts of air pollution into the future using this model. 
+Our project aims to study air pollution in Pittsburgh by specifically understanding the effect of inversion on air pollution. We will calculate when inversion happens in the Pittsburgh area, and using 8 years of hourly pollution and weather data measurements, we will estimate the effect of inversion on the levels of CO, NO, S02, Ozone, $PM_{10}$, and $PM_{2.5}$ in Pittsburgh using a VARX model. We will then conclude by presenting forecasts of air pollution into the future using this model. 
 
 # Data 
 
@@ -29,15 +29,17 @@ Our data came from two sources. The first data set is from the Allegheny County 
 
 The data from the Allegheny County Health Department contain a variable called is_valid which is a boolean argument indicating whether the sensor returned a logically valid measurement for the parameter being measured. All values where is_valid was false were removed from the data. It was discovered that most data for sensors in the metropolitan Pittsburgh area did not have sufficient, continuous data at each location. Thus, we will only be considering measurements from Lawrenceville as this station had the most complete readings for all of the pollutants and environmental variables in consideration. All other locations were removed from the data.
 
-The air pollutants in consideration are SO2, CO, Ozone, NO, particulate matter under 10 micrometers in size ($PM_{10}$), and particulate matter under 2.5 micrometers in size (PM2.5). All other pollutants were removed from the data. Additionally, some of these pollutants had illogical negative measurements and such measurements were removed from the data. NO and PM2.5 had some measurements that were clear outliers so, for those two pollutants, any value that was several standard deviations above its mean was removed.
+The air pollutants in consideration are $SO_2$, CO, Ozone, NO, particulate matter under 10 micrometers in size ($PM_{10}$), and particulate matter under 2.5 micrometers in size ($PM_{2.5}$). All other pollutants were removed from the data. Additionally, some of these pollutants had illogical negative measurements and such measurements were removed from the data. NO and $PM_{2.5}$ had some measurements that were clear outliers so, for those two pollutants, any value that was several standard deviations above its mean was removed.
 
 Because we will be considering weather as external regressors in our model the data was also filtered to only include weather parameters reasonable to the study. These are inclusive of wind direction, wind speed, rainfall, peak wind gusts, relative humidity, and barometric pressure. 
 
 After our data cleaning process, we ended up with 72,074 observations from the air pollution dataset for our analysis. 
 
-[[PLACEHOLDER FOR SUMMARY TABLE]]
+```{r, out.width="75%", fig.align = 'center', echo=FALSE}
+knitr::include_graphics("/Users/zachstrennen/Desktop/Screenshot 2024-04-21 at 9.03.10 PM.png")
+```
 
-note: BP = Barometric Pressure (millimeters of mercury), CO = Carbon Monoxide (Parts per Billion),  INT_T = Internal Temperature of Sensor (Degrees Celsius), NO = Nitric Oxide (Parts per Billion), OUT_RH = Relative Humidity Outside the Monitoring Station (Percent), OZONE = Ozone Pollution (Parts per Million), Peak Wind Gust (miles per hour), $PM_{10}$B (micrograms per cubic meter), PM25B (micrograms per cubic meter), RAINFALL = rainfall at monitoring station (Inches), SO2 (Parts per Billion), SONICWD = direction of wind at monitoring station (Degrees), SONICWS = wind speed measured at monitoring station (miles per hour)The second data set is from raw GRIB file outputs for the National Oceanic and Atmospheric Administration's (NOAA) High Resolution Rapid Fresh (HRRF) atmospheric model3. We took the model's measurements of temperature (in Kelvin) at various altitudes over Pittsburgh from January 2016 to April 2024 to match the time span of the air pollution data. Since the model stores measurements by exact latitude and longitude coordinates, we used an approximate location (40.4676$^\circ$ N, 79.9606$^\circ$ W) to represent where the Lawrenceville monitoring station was located and found the nearest set of coordinates to that location in the model to take temperature observations from. The dataset is composed of daily observations of temperature at the surface and the 2-m temperature to represent temperature in the atmosphere in Pittsburgh.
+note: BP = Barometric Pressure (millimeters of mercury), CO = Carbon Monoxide (Parts per Billion),  INT_T = Internal Temperature of Sensor (Degrees Celsius), NO = Nitric Oxide (Parts per Billion), OUT_RH = Relative Humidity Outside the Monitoring Station (Percent), OZONE = Ozone Pollution (Parts per Million), Peak Wind Gust (miles per hour), $PM_{10}$ (micrograms per cubic meter), $PM_{2.5}$ (micrograms per cubic meter), RAINFALL = rainfall at monitoring station (Inches), $SO_2$ (Parts per Billion), SONICWD = direction of wind at monitoring station (Degrees), SONICWS = wind speed measured at monitoring station (miles per hour)The second data set is from raw GRIB file outputs for the National Oceanic and Atmospheric Administration's (NOAA) High Resolution Rapid Fresh (HRRF) atmospheric model3. We took the model's measurements of temperature (in Kelvin) at various altitudes over Pittsburgh from January 2016 to April 2024 to match the time span of the air pollution data. Since the model stores measurements by exact latitude and longitude coordinates, we used an approximate location (40.4676$^\circ$ N, 79.9606$^\circ$ W) to represent where the Lawrenceville monitoring station was located and found the nearest set of coordinates to that location in the model to take temperature observations from. The dataset is composed of daily observations of temperature at the surface and the 2-m temperature to represent temperature in the atmosphere in Pittsburgh.
 
 # Methods
 
@@ -49,7 +51,7 @@ From the NOAA data, we compared the surface temperature with the 2-m temperature
 
 ### Exploratory Data Analysis
 
-To measure Pittsburgh air quality in the Lawrenceville area, we examined the pollutant parameters SO2, CO, Ozone, NO, $PM_{10}$, and PM2.5 from January 2016 to April 2024, filtering by the criteria mentioned in the Data Cleaning section. The time series, time series decomposition, and ACF/PACF plots were generated for all 6 pollutants to look for factors like seasonality or trend that could potentially be important when fitting a model to the data. The plots for all pollutants are shown below:
+To measure Pittsburgh air quality in the Lawrenceville area, we examined the pollutant parameters $SO_2$, CO, Ozone, NO, $PM_{10}$, and $PM_{2.5}$ from January 2016 to April 2024, filtering by the criteria mentioned in the Data Cleaning section. The time series, time series decomposition, and ACF/PACF plots were generated for all 6 pollutants to look for factors like seasonality or trend that could potentially be important when fitting a model to the data. The plots for all pollutants are shown below:
 ```{r, echo=FALSE, include=FALSE}
 data <- read_csv("Data/cleaned_pollution_data.csv")
 pittsburgh_pollution_data <- read_csv("Data/cleaned_pollution_data.csv")
@@ -114,29 +116,29 @@ SO2:
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(so2_data, aes(x = datetime_est, y = report_value)) + 
   geom_line() + 
-  labs(title= "SO2 Time Series Plot", x = "Time", y = "Reported SO2 value (PPM)") +
+  labs(title= "$SO_2$ Time Series Plot", x = "Time", y = "Reported $SO_2$ value (PPM)") +
   theme_bw()
 ```
 
-From this plot, we see a clear repeating deterministic pattern over all the years, in increments of approximately one year, where levels of the pollutant increase to a peak from the start of the year and slowly decrease again towards the end of the year, for all years in our 2016 to 2024 range, which suggests a seasonal component to our data set. This seasonal pattern becomes even more apparent when we use the decompose() function to plot the decomposition of the time series for all of our pollutants, as we did with SO2.below:
+From this plot, we see a clear repeating deterministic pattern over all the years, in increments of approximately one year, where levels of the pollutant increase to a peak from the start of the year and slowly decrease again towards the end of the year, for all years in our 2016 to 2024 range, which suggests a seasonal component to our data set. This seasonal pattern becomes even more apparent when we use the decompose() function to plot the decomposition of the time series for all of our pollutants, as we did with $SO_2$ below:
  
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(so2_data_decomp)
 ```
 
-Here, we see a seasonal pattern in our pollutant data for SO2 exists, as well as a trend component that rises and falls over the 2016-2024 range of time we use to examine SO2. These findings show that when building a model with our pollutant data, we must be able to account for the seasonal and trend component that exists in the data. Finally, we check for autocorrelation in our pollutant data by examining the ACF and PACF plots for SO2, as shown below:
+Here, we see a seasonal pattern in our pollutant data for $SO_2$ exists, as well as a trend component that rises and falls over the 2016-2024 range of time we use to examine $SO_2$. These findings show that when building a model with our pollutant data, we must be able to account for the seasonal and trend component that exists in the data. Finally, we check for autocorrelation in our pollutant data by examining the ACF and PACF plots for $SO_2$, as shown below:
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_so2 <- acf(so2_data$report_value, lag.max = 50, plot = FALSE)
 pacf_so2 <- pacf(so2_data$report_value, lag.max = 50, plot = FALSE)
 par(mfrow=c(1,2))
-plot(acf_so2, main = "ACF Plot for SO2")
-plot(pacf_so2, main = "PACF Plot for SO2")
+plot(acf_so2, main = "ACF Plot for $SO_2$")
+plot(pacf_so2, main = "PACF Plot for $SO_2$")
 ```
 
 Here, we see that in the ACF plot we find significant spikes for all lags and for many lags in the PACF plot (up to the maximum lag value of 50 that was specified), which gives clear evidence that we can reject the white noise hypothesis as both the ACF and PACF show significant autocorrelations over various lags. The significant autocorrelation that exists for multiple lags in both plots provides more evidence that a strong trend and/or seasonality exists in the data that must be accounted for when building our model. 
 
-While the above plot analysis was done only for the SO2 pollutant, we can see that the same behavior holds true for all pollutants, as shown below: 
+While the above plot analysis was done only for the $SO_2$ pollutant, we can see that the same behavior holds true for all pollutants, as shown below: 
 
 CO: 
 
@@ -222,7 +224,7 @@ plot(pacf_no, main = "PACF Plot for NO")
 
 The ACF and PACF plots for NO show a complex correlation structure. The ACF plot shows a slow decay of correlation, which indicates the long-term effect of past values on future values. This could reflect the effects of inversions on NO levels. The PACF shows a significant spike at the first lag and slowly decays, indicating that the autoregressive structure is not as well pronounced as it might be expected. 
 
-$PM_{10}$B: 
+$PM_{10}$: 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(pm10b_data, aes(x = datetime_est, y = report_value)) +
@@ -231,57 +233,57 @@ ggplot(pm10b_data, aes(x = datetime_est, y = report_value)) +
   theme_bw()
 ```
 
-The time series plot depicting $PM_{10}$B shows a high variability in dynamic air quality in Pittsburgh. The report values fluctuate considerably between peaks. The lack of a consistent seasonal pattern may indicate that these inversion events and their impact on $PM_{10}$B levels do not occur with regular seasonality but are instead influenced by a combination of factors such as weather conditions. It also exhibits a particularly noticeable cluster of high peaks towards the latter part of the timeline.
+The time series plot depicting $PM_{10}$ shows a high variability in dynamic air quality in Pittsburgh. The report values fluctuate considerably between peaks. The lack of a consistent seasonal pattern may indicate that these inversion events and their impact on $PM_{10}$ levels do not occur with regular seasonality but are instead influenced by a combination of factors such as weather conditions. It also exhibits a particularly noticeable cluster of high peaks towards the latter part of the timeline.
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(pm10b_data_decomp)
 ```
 
-Decomposing this time series, we see the trend, seasonality, and random components that provide a more detailed view of the data. The trend line shows some fluctuations but doesn’t have a clear direction of increase or decrease over time, suggesting that long-term changes in $PM_{10}$B levels are not pronounced. The seasonal component is not as regular as expected.
+Decomposing this time series, we see the trend, seasonality, and random components that provide a more detailed view of the data. The trend line shows some fluctuations but doesn’t have a clear direction of increase or decrease over time, suggesting that long-term changes in $PM_{10}$ levels are not pronounced. The seasonal component is not as regular as expected.
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_pm10b <- acf(pm10b_data$report_value, lag.max = 50, plot = FALSE)
 pacf_pm10b <- pacf(pm10b_data$report_value, lag.max = 50, plot = FALSE)
 par(mfrow=c(1,2))
-plot(acf_pm10b, main = "ACF Plot for PM10B")
-plot(pacf_pm10b, main = "PACF Plot for PM10B")
+plot(acf_pm10b, main = "ACF Plot for PM10")
+plot(pacf_pm10b, main = "PACF Plot for PM10")
 ```
 
-The ACF plot for $PM_{10}$B demonstrates a gradual decrease in correlation over time with a series of significant spikes. This demonstrates a cyclic behavior of the data. The PACF plot, however, shows a significant correlation at first but quickly decreases, suggesting that PM10B levels are dependent on past values but don’t represent a strong autoregressive behavior. 
+The ACF plot for $PM_{10}$ demonstrates a gradual decrease in correlation over time with a series of significant spikes. This demonstrates a cyclic behavior of the data. The PACF plot, however, shows a significant correlation at first but quickly decreases, suggesting that PM10B levels are dependent on past values but don’t represent a strong autoregressive behavior. 
 
-PM25B: 
+$PM_{2.5}$: 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 ggplot(pm25b_data, aes(x = datetime_est, y = report_value)) +
   geom_line() + 
-  labs(title= "PM25B Time Series Plot", x = "Time", y = "Reported PM25B value (UG/M^3)") +
+  labs(title= "$PM_{2.5}$ Time Series Plot", x = "Time", y = "Reported $PM_{2.5}$ value (UG/M^3)") +
   theme_bw()
 ```
 
-The time series plot of PM25B from 2016 to 2024 shows a noticeable pattern of fluctuations in reported values. The data shows the peaks throughout the years, which could be indicative of pollution events or changes in atmospheric conditions. 
+The time series plot of $PM_{2.5}$ from 2016 to 2024 shows a noticeable pattern of fluctuations in reported values. The data shows the peaks throughout the years, which could be indicative of pollution events or changes in atmospheric conditions. 
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 plot(pm25b_data_decomp)
 ```
 
-In the decomposition of PM25B time series, the observed component clearly shows these spikes in pollution levels. The trend component suggests there is some variation over time, though it does not display a strong directional movement. The seasonal pattern is not as pronounced as one might expect to see with other pollutants which could be due to the complex dynamics of the pollutants. Moreover, the random component captures irregularities.
+In the decomposition of $PM_{2.5}$ time series, the observed component clearly shows these spikes in pollution levels. The trend component suggests there is some variation over time, though it does not display a strong directional movement. The seasonal pattern is not as pronounced as one might expect to see with other pollutants which could be due to the complex dynamics of the pollutants. Moreover, the random component captures irregularities.
 
 ```{r, echo=FALSE, out.width="75%", fig.align = 'center'}
 acf_pm25b <- acf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
 pacf_pm25b <- pacf(pm25b_data$report_value, lag.max = 50, plot = FALSE)
 par(mfrow=c(1,2))
-plot(acf_pm25b, main = "ACF Plot for PM25B")
-plot(pacf_pm25b, main = "PACF Plot for PM25B")
+plot(acf_pm25b, main = "ACF Plot for $PM_{2.5}$")
+plot(pacf_pm25b, main = "PACF Plot for $PM_{2.5}$")
 ```
 
-The ACF plot for PM25B demonstrates a slowly decreasing correlation as lag increases which suggests that past values have some level of influence on future values even though this influence decays over time. The PACF plot shows an immediate drop after the first lag, implying that PM25B concentrations are more influenced by the recent values rather than by past values. This gives us some insight in modeling as it indicates the short-term conditions. 
+The ACF plot for PM25 demonstrates a slowly decreasing correlation as lag increases which suggests that past values have some level of influence on future values even though this influence decays over time. The PACF plot shows an immediate drop after the first lag, implying that $PM_{2.5}$ concentrations are more influenced by the recent values rather than by past values. This gives us some insight in modeling as it indicates the short-term conditions. 
 
 Taken together, we see strong evidence that, for all pollutants, there exists a trend and seasonality component that needs to be accounted for when selecting a model to accurately represent the relationships present in our pollutant data. This requires a modeling method that can show the complex relationships between multiple time series while capturing the dynamic changes of our hourly data pollutant data for all time in our 2016-2024 time range. Additionally, the modeling method we employ should be able to account for how the pollutant variables may be strongly related to each other, as the presence of all of these pollutants are strongly tied to the pollution caused by certain industrial sites in Pittsburgh. Finally, whatever model we select should be able to capture the effect of an outside factor such as inversion occurrence on the behavior of our multiple time series, even though inversion is not part of the system itself. A model that captures dynamic behavior of multiple interrelated pollutant time series, while still accounting for exogenous variables such as inversion occurrence all seem like very good supporting evidence for fitting a VARX model to our data.
 
 
 ### Modeling approach
 
-To estimate how inversions affect the six pollutants, we built a VARX model with a matrix of SO2, CO, Ozone, NO, $PM_{10}$, and PM2.5 as the response, and our environmental and weather variables as the response. This model is justified by our EDA, as explained in the previous section. Moreover, since each observation contains pollution measurements that are correlated with each other, it makes sense to estimate them simultaneously in the same model, just as a VARX model does. 
+To estimate how inversions affect the six pollutants, we built a VARX model with a matrix of $SO_2$, CO, Ozone, NO, $PM_{10}$, and $PM_{2.5}$ as the response, and our environmental and weather variables as the response. This model is justified by our EDA, as explained in the previous section. Moreover, since each observation contains pollution measurements that are correlated with each other, it makes sense to estimate them simultaneously in the same model, just as a VARX model does. 
 
 Our model is defined as follows:
 
@@ -411,7 +413,7 @@ var_1 <- VAR(pollutants, p = 27, type = "trend", exogen = environmentalvariables
 
 Our VARX model estimated the effect of lagged pollutant values, weather and environmental factors, and the effect of inversion on pollution in Pittsburgh, as well as a trend factor for pollution (for full model results see Appendix 2). 
 
-We estimate that the effect of inversion on NO pollution is 0.108 (Standard Error = 0.074, t(71909) = 1.453, p = 0.146), on SO2 pollution is -0.004 (Standard Error = 0.004, t(71909) = -0.911, p = 0.363), on CO pollution is 2.308 (Standard Error = 0.770, t(71909) = 2.996, p = 0.003), on PM10B pollution is -0.132 (Standard Error = 0.047, t(71909) = -2.823, p = 0.005), on PM25B pollution is -0.004 (Standard Error = 0.078, t(71909) = -0.052, p = 0.958), and on Ozone is -0.0003 (Standard Error = 0.00004, t(71909) = -7.014, p < 2.2e-16). 
+We estimate that the effect of inversion on NO pollution is 0.108 (Standard Error = 0.074, t(71909) = 1.453, p = 0.146), on $SO_2$ pollution is -0.004 (Standard Error = 0.004, t(71909) = -0.911, p = 0.363), on CO pollution is 2.308 (Standard Error = 0.770, t(71909) = 2.996, p = 0.003), on PM10B pollution is -0.132 (Standard Error = 0.047, t(71909) = -2.823, p = 0.005), on $PM_{2.5}$ pollution is -0.004 (Standard Error = 0.078, t(71909) = -0.052, p = 0.958), and on Ozone is -0.0003 (Standard Error = 0.00004, t(71909) = -7.014, p < 2.2e-16). 
 
 This suggests that our model found that there was a significant positive effect on CO pollution from the presence of an inversion, and a significant negative effect on Ozone and PM10B pollution from the presence of an inversion. 
 
@@ -463,7 +465,7 @@ While we feel confident in our analysis and the results it produced, there were 
 
 The biggest constraint to performing the analysis was a lack of available data, because though we were able to receive the hourly weather data from 2016 to 2024 for multiple weather and pollutant parameters, much of this data was flawed (due to measurement error) or incomplete (due to sensor outages) to the point that much of it could not be used. For example, many of the pollutant parameter values were missing during times when the other pollutant values were specified or certain parameters were reported as having a negative quantity of the pollutant appearing during certain time periods, which was an obvious impossibility and showed that there was a likely error in the data collection process for a section of our data. These unusable values of certain parameters meant that certain data simply had to be excluded, which limited the amount of data we had to work with and could have adversely impacted the overall power of our analysis. 
 
-Another constraint to our analysis process was the locational limitation of our data. Allegheny County operates air quality monitoring stations throughout the county, and although there were weather and environmental conditions measured at multiple sites (Liberty, North Braddock, Lawrenceville, Parkway East, South Fayette, Avalon, USS Clairton Sodar Site), we could not use data from many of these sites because it was incomplete either in terms of the number of pollutants it tracked or it had significant time gaps where data was not collected. For example, while the Lawrenceville site that we used for our analysis contained data for all of the pollutants of interest (SO2, CO, Ozone, NO, PM10, and PM2.5), the Liberty site only contained the pollutant data for SO2, and the Avalon site contained only the SO2 and PM2.5 pollutants. Ideally, we would have been able to measure the effect of inversion on pollutants at every Allegheny County air quality monitoring site in order to get a generalized conclusion about the effect of inversion on air pollution in the area, however this was not possible in this project. Thus, our conclusions about the effect of inversion on pollution at Lawrenceville may not be generalizable to the rest of Allegheny County and the Pittsburgh area. If this project were to be repeated or expanded upon in the future, we would need to collect pollution and environmental data ourselves using our own air quality and weather monitors to ensure that we have enough usable data from all sites to enhance the statistical power and quality of our analysis.
+Another constraint to our analysis process was the locational limitation of our data. Allegheny County operates air quality monitoring stations throughout the county, and although there were weather and environmental conditions measured at multiple sites (Liberty, North Braddock, Lawrenceville, Parkway East, South Fayette, Avalon, USS Clairton Sodar Site), we could not use data from many of these sites because it was incomplete either in terms of the number of pollutants it tracked or it had significant time gaps where data was not collected. For example, while the Lawrenceville site that we used for our analysis contained data for all of the pollutants of interest ($SO_2$, CO, Ozone, NO, PM10, and $PM_{2.5}$), the Liberty site only contained the pollutant data for $SO_2$, and the Avalon site contained only the $SO_2$ and $PM_{2.5}$ pollutants. Ideally, we would have been able to measure the effect of inversion on pollutants at every Allegheny County air quality monitoring site in order to get a generalized conclusion about the effect of inversion on air pollution in the area, however this was not possible in this project. Thus, our conclusions about the effect of inversion on pollution at Lawrenceville may not be generalizable to the rest of Allegheny County and the Pittsburgh area. If this project were to be repeated or expanded upon in the future, we would need to collect pollution and environmental data ourselves using our own air quality and weather monitors to ensure that we have enough usable data from all sites to enhance the statistical power and quality of our analysis.
 
 An additional limitation to our project was that we did not have a good forecasting method since we did not have an exact way to generate future predictions of our external regressors. Our method relies on the time series processes of each of our external regressors staying the same (not changing or drifting) over time in the future. That assumption is quite strong and may not be reasonable in the context of atmospheric and weather data that has significant randomness associated with it. Furthermore, it would be ideal to be able to predict when future inversions would occur, but that was not possible in our project because we did not have access to the full NOAA HRRR model, and we do not have the knowledge or resources to reconstruct it.
 
