@@ -241,9 +241,10 @@ environmentalvariables$BP[environmentalvariables$BP == 0] <- mean(environmentalv
 ```{r}
 #this line of code takes a day to run.
 #model_select <- VARselect(y=pollutants, lag.max = 100, exogen = environmentalvariables)
+#model_select
 ```
 
-#now the correct model is 99 lags.
+#now the correct model is 27 and 99 lags.
 
 
 ```{r}
@@ -254,8 +255,28 @@ var_1 <- VAR(pollutants, p = 27, type = "trend", exogen = environmentalvariables
 ```
 
 ```{r}
-coef(var_1)
+#coef(var_1)
 ```
+
+
+
+```{r}
+library(stargazer)
+```
+```{r}
+stargazer(coef(var_1), type = "latex")
+```
+
+```{r}
+```
+
+
+
+
+
+
+
+
 
 
 
@@ -264,7 +285,6 @@ coef(var_1)
 #let's make a forecast with var_1 
 #we have to forecast out the external regressors
 library(prophet)
-
 fut_ev <- matrix(0, nrow = 2400, ncol = ncol(environmentalvariables))
 #fut_ev[, 1] <- 1
 for(i in 1:8){
@@ -280,10 +300,9 @@ for(i in 1:8){
 }
 #resample the inversion data
 fut_ev[, 9] <- sample(environmentalvariables$inversion, 2400, replace = TRUE)
-
 fut_ev <- as.data.frame(fut_ev)
-
 colnames(fut_ev) <- colnames(environmentalvariables)
+colnames(fut_ev)[5] <- "Peak.Wind.Gust"
 ```
 
 ```{r}
@@ -292,12 +311,14 @@ colnames(fut_ev) <- colnames(environmentalvariables)
 
 
 ```{r}
-forecast_1 <- forecast(var_1, dumvar = fut_ev)
+#forecast_1 <- forecast(var_1, dumvar = environmentalvariables)
+#fut_ev <- environmentalvariables[1:2400, ]
+forecast_1 <- predict(var_1, n.ahead = 2400, dumvar = fut_ev)
 ```
 
 ```{r}
-var_ne <- VAR(pollutants, p = 27)
-forecast_ne <- predict(var_ne, n.ahead = 2400)
-plot(forecast_ne)
+#var_ne <- VAR(pollutants, p = 27)
+#forecast_ne <- predict(var_ne, n.ahead = 2400)
+#plot(forecast_ne)
 ```
 
