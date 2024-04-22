@@ -1,0 +1,54 @@
+---
+title: "random_tables_figures"
+author: "Vinay Maruri"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+```
+
+```{r}
+pittsburgh_pollution_data <- read_csv("Data/cleaned_pollution_data.csv")
+```
+
+
+```{r}
+ppd_lawrenceville <- pittsburgh_pollution_data %>%
+  filter(site == "Lawrenceville" & is_valid == "TRUE")
+```
+
+```{r}
+#summary statistics of lawrenceville data
+#expand lawrenceville data from long to wide
+#long to wide, only for the variables of interest (parameter and report value)--no need for anything else
+ppd_lawrenceville_wide <- ppd_lawrenceville %>%
+  spread(parameter, report_value)
+
+ppd_lawrenceville_wide <- ppd_lawrenceville_wide[, c(2, 9:24)]
+
+#collapse the data into a single row for each datetime_est
+ppd_lawrenceville_wide <- ppd_lawrenceville_wide %>%
+  group_by(datetime_est) %>%
+  summarise_all(mean, na.rm = TRUE)
+
+#fill na with zero
+ppd_lawrenceville_wide[is.na(ppd_lawrenceville_wide)] <- 0
+
+ppd_lawrenceville_wide <- ppd_lawrenceville_wide[, -c(1, 6, 13)]
+```
+
+```{r}
+#create a descriptive table about the data
+library(vtable)
+st(ppd_lawrenceville_wide)
+```
+
+
