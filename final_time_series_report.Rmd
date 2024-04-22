@@ -525,6 +525,12 @@ One possible utilization of this model and the resulting output in a real-world 
 
 # Appendix 1: VARX Model Selection
 
+```{r}
+knitr::include_graphics("time_series_selection.pdf")
+```
+
+
+
 # Appendix 2: VARX Model Results
 
 # Appendix 3: Python Code for Collecting Inversion Data
